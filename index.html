@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Medios y Soportes</title>
+<style>
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Space Grotesk',sans-serif;background:transparent;color:var(--color-text-primary)}
+.app{max-width:680px;margin:0 auto;padding:0}
+.home{padding:1.5rem 0}
+.home-title{font-size:22px;font-weight:700;margin-bottom:4px}
+.home-sub{font-size:13px;color:var(--color-text-secondary);margin-bottom:1.5rem}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.5rem}
+.stat-card{background:var(--color-background-secondary);border-radius:10px;padding:12px;text-align:center}
+.stat-num{font-size:22px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.stat-label{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.25rem}
+.mode-btn{background:var(--color-background-primary);border:1.5px solid var(--color-border-secondary);border-radius:12px;padding:14px;cursor:pointer;text-align:left;transition:all .15s}
+.mode-btn:hover,.mode-btn.active{border-color:#185FA5;background:#E6F1FB}
+.mode-icon{font-size:20px;margin-bottom:6px}
+.mode-name{font-size:14px;font-weight:600;color:var(--color-text-primary)}
+.mode-desc{font-size:12px;color:var(--color-text-secondary);margin-top:2px}
+.filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem;align-items:center}
+.filter-label{font-size:12px;color:var(--color-text-secondary)}
+.tag{padding:5px 11px;border-radius:99px;border:1px solid var(--color-border-secondary);font-size:12px;cursor:pointer;background:var(--color-background-primary);color:var(--color-text-secondary);transition:all .12s}
+.tag.active{background:var(--color-text-primary);color:var(--color-background-primary);border-color:var(--color-text-primary)}
+.source-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:1.25rem;align-items:center}
+.start-btn{width:100%;padding:14px;border-radius:10px;background:var(--color-text-primary);color:var(--color-background-primary);border:none;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.start-btn:hover{opacity:.85}
+.link-btn{background:none;border:none;cursor:pointer;font-size:13px;color:var(--color-text-secondary);font-family:inherit;text-decoration:underline;margin-top:10px;display:block;text-align:center}
+.quiz{padding:1rem 0 2rem}
+.quiz-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.quiz-back{background:none;border:none;cursor:pointer;font-size:13px;color:var(--color-text-secondary);padding:6px 10px;border-radius:8px;font-family:inherit}
+.quiz-back:hover{background:var(--color-background-secondary)}
+.quiz-progress-text{font-size:13px;color:var(--color-text-secondary);font-family:'IBM Plex Mono',monospace}
+.progress-bar{height:4px;background:var(--color-background-secondary);border-radius:99px;margin-bottom:1.5rem;overflow:hidden}
+.progress-fill{height:100%;background:#1D9E75;border-radius:99px;transition:width .3s}
+.q-meta{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.q-tag{font-size:11px;padding:3px 10px;border-radius:99px;font-weight:600}
+.q-tag.tema{background:#E6F1FB;color:#185FA5}
+.q-tag.src-docx{background:#EEEDFE;color:#3C3489}
+.q-tag.src-kah{background:#E1F5EE;color:#0F6E56}
+.q-tag.src-rep{background:#FAEEDA;color:#633806}
+.question-text{font-size:16px;font-weight:600;line-height:1.5;margin-bottom:1.25rem}
+.options{display:flex;flex-direction:column;gap:8px;margin-bottom:1rem}
+.option{padding:12px 16px;border-radius:10px;border:1.5px solid var(--color-border-secondary);cursor:pointer;font-size:14px;color:var(--color-text-primary);transition:all .12s;display:flex;align-items:flex-start;gap:10px;line-height:1.45;background:var(--color-background-primary);text-align:left}
+.option:hover:not(.disabled){border-color:#185FA5;background:#E6F1FB;color:#185FA5}
+.option.correct{border-color:#1D9E75;background:#E1F5EE;color:#0F6E56}
+.option.wrong{border-color:#D85A30;background:#FAECE7;color:#993C1D}
+.option.show-correct{border-color:#1D9E75;background:#E1F5EE;color:#0F6E56}
+.option.disabled{cursor:default}
+.opt-letter{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12px;background:var(--color-background-secondary);padding:2px 6px;border-radius:4px;flex-shrink:0;margin-top:1px}
+.explanation{background:var(--color-background-secondary);border-radius:10px;padding:14px;font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-bottom:1rem;border-left:3px solid #1D9E75;display:none}
+.explanation.wrong-exp{border-left-color:#D85A30}
+.explanation.show{display:block}
+.next-btn{width:100%;padding:13px;border-radius:10px;background:var(--color-text-primary);color:var(--color-background-primary);border:none;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:600;cursor:pointer;display:none}
+.next-btn.show{display:block}
+.flashcard-wrap{perspective:1000px;margin:1.5rem 0;cursor:pointer}
+.flashcard{position:relative;width:100%;min-height:180px;transition:transform .5s;transform-style:preserve-3d}
+.flashcard.flipped{transform:rotateY(180deg)}
+.card-face{position:absolute;width:100%;min-height:180px;backface-visibility:hidden;border-radius:14px;border:1.5px solid var(--color-border-secondary);padding:24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.card-front{background:var(--color-background-primary)}
+.card-back{background:var(--color-background-secondary);transform:rotateY(180deg)}
+.card-hint{font-size:11px;color:var(--color-text-secondary);margin-bottom:12px}
+.card-q{font-size:15px;font-weight:600;line-height:1.5}
+.card-a{font-size:14px;color:#1D9E75;font-weight:600;line-height:1.5}
+.card-controls{display:flex;gap:8px}
+.card-btn{flex:1;padding:10px;border-radius:8px;border:1px solid var(--color-border-secondary);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:all .12s}
+.card-btn.yes{background:#E1F5EE;color:#1D9E75;border-color:#1D9E75}
+.card-btn.no{background:#FAECE7;color:#D85A30;border-color:#D85A30}
+.results{padding:1.5rem 0;text-align:center}
+.score-circle{width:110px;height:110px;border-radius:50%;margin:0 auto 1rem;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:28px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.score-circle.pass{background:#E1F5EE;color:#1D9E75;border:3px solid #1D9E75}
+.score-circle.fail{background:#FAECE7;color:#D85A30;border:3px solid #D85A30}
+.score-circle .score-label{font-size:11px;font-weight:500;font-family:'Space Grotesk',sans-serif}
+.results-title{font-size:20px;font-weight:700;margin-bottom:6px}
+.results-sub{font-size:14px;color:var(--color-text-secondary);margin-bottom:1.5rem}
+.results-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:1.5rem}
+.res-stat{background:var(--color-background-secondary);border-radius:10px;padding:12px}
+.res-num{font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.res-num.g{color:#1D9E75}.res-num.r{color:#D85A30}.res-num.b{color:#185FA5}
+.res-lbl{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.review-list{text-align:left;margin-bottom:1.5rem}
+.review-title{font-size:12px;font-weight:600;color:var(--color-text-secondary);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em}
+.review-item{padding:10px 12px;border-radius:8px;background:#FAECE7;border-left:3px solid #D85A30;margin-bottom:6px;font-size:13px}
+.review-correct{font-size:12px;color:#1D9E75;margin-top:4px;font-weight:500}
+.res-btns{display:flex;gap:8px}
+.res-btn{flex:1;padding:12px;border-radius:10px;border:1.5px solid var(--color-border-secondary);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;background:var(--color-background-primary);color:var(--color-text-primary);transition:all .12s}
+.res-btn:hover{background:var(--color-background-secondary)}
+.res-btn.primary{background:var(--color-text-primary);color:var(--color-background-primary);border-color:var(--color-text-primary)}
+.cheatsheet{padding:1rem 0 2rem}
+.cs-back{background:none;border:none;cursor:pointer;font-size:14px;color:var(--color-text-secondary);padding:6px 0;font-family:inherit;display:flex;align-items:center;gap:6px;margin-bottom:1rem}
+.cs-title{font-size:18px;font-weight:700;margin-bottom:1rem}
+.cs-section{margin-bottom:10px;border:1px solid var(--color-border-tertiary);border-radius:10px;overflow:hidden}
+.cs-head{padding:12px 14px;background:var(--color-background-secondary);font-size:13px;font-weight:700;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.cs-body{padding:12px 14px;font-size:13px;display:none}
+.cs-body.open{display:block}
+.cs-row{display:flex;gap:8px;align-items:baseline;padding:4px 0;border-bottom:.5px solid var(--color-border-tertiary)}
+.cs-row:last-child{border-bottom:none}
+.cs-key{font-weight:600;color:var(--color-text-primary);min-width:150px;font-size:12px;flex-shrink:0}
+.cs-val{color:var(--color-text-secondary);font-size:12px;line-height:1.5}
+.hidden{display:none!important}
+
+</style>
+
+
+<div class="app" id="app">
+
+<!-- HOME -->
+<div class="home" id="screen-home">
+  <div class="home-title">📡 Simulador Medios y Soportes</div>
+  <div class="home-sub" id="home-sub">156 preguntas · Examen + Kahoot · Temas 8-15</div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-num" id="stat-total">156</div><div class="stat-label">Total</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-done">0</div><div class="stat-label">Hechas</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-correct">0</div><div class="stat-label">Correctas</div></div>
+    <div class="stat-card"><div class="stat-num" id="stat-pct">—</div><div class="stat-label">% Acierto</div></div>
+  </div>
+  <div class="mode-grid">
+    <button class="mode-btn active" onclick="setMode('simulacro',this)"><div class="mode-icon">⏱</div><div class="mode-name">Simulacro</div><div class="mode-desc">40 preguntas · como el examen real</div></button>
+    <button class="mode-btn" onclick="setMode('flashcards',this)"><div class="mode-icon">🃏</div><div class="mode-name">Flashcards</div><div class="mode-desc">Repasa conceptos girando cartas</div></button>
+    <button class="mode-btn" onclick="setMode('porTema',this)"><div class="mode-icon">📖</div><div class="mode-name">Por tema</div><div class="mode-desc">Estudia tema a tema</div></button>
+    <button class="mode-btn" onclick="setMode('fallos',this)"><div class="mode-icon">🎯</div><div class="mode-name">Mis fallos</div><div class="mode-desc">Solo las preguntas que fallas</div></button>
+    <button class="mode-btn" onclick="setMode('todas',this)"><div class="mode-icon">📋</div><div class="mode-name">Todas las preguntas</div><div class="mode-desc">Responde todas · con filtros</div></button>
+  </div>
+
+  <div id="filters-tema" class="filter-row" style="display:none">
+    <span class="filter-label">Tema:</span>
+    <span class="tag active" onclick="selTema(this,'todos')">Todos</span>
+    <span class="tag" onclick="selTema(this,'T8')">T8</span>
+    <span class="tag" onclick="selTema(this,'T9')">T9</span>
+    <span class="tag" onclick="selTema(this,'T10')">T10</span>
+    <span class="tag" onclick="selTema(this,'T11')">T11</span>
+    <span class="tag" onclick="selTema(this,'T12')">T12</span>
+    <span class="tag" onclick="selTema(this,'T13')">T13</span>
+    <span class="tag" onclick="selTema(this,'T14')">T14</span>
+    <span class="tag" onclick="selTema(this,'T15')">T15</span>
+  </div>
+
+  <div class="source-row" id="filters-source">
+    <span class="filter-label">Fuente:</span>
+    <span class="tag active" onclick="selSrc(this,'todas')">Todas</span>
+    <span class="tag" onclick="selSrc(this,'docx')">📝 Examen/PDFs (96)</span>
+    <span class="tag" onclick="selSrc(this,'kah')">🎮 Kahoot (26)</span>
+  </div>
+
+  <button class="start-btn" id="start-btn" onclick="startSession()">Empezar simulacro ↗</button>
+  <button class="link-btn" onclick="showCheatsheet()">Ver resumen por temas →</button>
+</div>
+
+<!-- QUIZ -->
+<div class="quiz hidden" id="screen-quiz">
+  <div class="quiz-header">
+    <button class="quiz-back" onclick="goHome()">← Salir</button>
+    <span class="quiz-progress-text" id="q-progress">1/40</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div class="q-meta" id="q-meta"></div>
+  <div class="question-text" id="q-text"></div>
+  <div class="options" id="q-options"></div>
+  <div class="explanation" id="q-explanation"></div>
+  <button class="next-btn" id="next-btn" onclick="nextQuestion()">Siguiente →</button>
+</div>
+
+<!-- FLASH -->
+<div class="quiz hidden" id="screen-flash">
+  <div class="quiz-header">
+    <button class="quiz-back" onclick="goHome()">← Salir</button>
+    <span class="quiz-progress-text" id="f-progress">1/—</span>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="f-fill" style="width:0%"></div></div>
+  <div class="q-meta" id="f-meta"></div>
+  <div class="flashcard-wrap" onclick="flipCard()">
+    <div class="flashcard" id="flashcard">
+      <div class="card-face card-front"><div class="card-hint">— toca para ver la respuesta —</div><div class="card-q" id="f-question"></div></div>
+      <div class="card-face card-back"><div class="card-hint">¿Lo sabías?</div><div class="card-a" id="f-answer"></div></div>
+    </div>
+  </div>
+  <div class="card-controls" id="card-controls" style="display:none">
+    <button class="card-btn no" onclick="cardResult(false)">✗ No lo sabía</button>
+    <button class="card-btn yes" onclick="cardResult(true)">✓ Lo sabía</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="results hidden" id="screen-results">
+  <div class="score-circle" id="score-circle"><div id="score-pct">0%</div><div class="score-label" id="score-label">—</div></div>
+  <div class="results-title" id="res-title">Simulacro completado</div>
+  <div class="results-sub" id="res-sub"></div>
+  <div class="results-grid">
+    <div class="res-stat"><div class="res-num g" id="res-correct">0</div><div class="res-lbl">Correctas</div></div>
+    <div class="res-stat"><div class="res-num r" id="res-wrong">0</div><div class="res-lbl">Fallos</div></div>
+    <div class="res-stat"><div class="res-num b" id="res-total">0</div><div class="res-lbl">Total</div></div>
+  </div>
+  <div class="review-list" id="review-list"></div>
+  <div class="res-btns">
+    <button class="res-btn" onclick="goHome()">← Inicio</button>
+    <button class="res-btn primary" onclick="repeatFails()">Repetir fallos ↗</button>
+  </div>
+</div>
+
+<!-- CHEAT -->
+<div class="cheatsheet hidden" id="screen-cheat">
+  <button class="cs-back" onclick="goHome()">← Inicio</button>
+  <div class="cs-title">📋 Resumen por temas</div>
+  <div id="cheat-content"></div>
+</div>
+
+</div>
+
+
+<script>
+const Q=[
+{id:1,t:"T8",s:"docx",q:"¿Cuál de los siguientes soportes NO se incluye dentro de las PLV?",o:["Megafonía publicitaria","Displays","Demostradores","Marquesina"],c:3,e:"La <b>marquesina</b> es un soporte de <b>publicidad exterior</b>, no de PLV. Las formas del PLV son: cartelería, displays, luminosos, proyecciones audiovisuales, exhibidores, tótems y folletos. La megafonía, los displays y los demostradores sí son elementos del PLV."},
+{id:2,t:"T9",s:"docx",q:"Se trata de una modalidad del marketing directo NO impreso que consiste en utilizar la TV como soporte de venta a distancia:",o:["Telemarketing","Televenta","Marketing directo","Emailing"],c:1,e:"La <b>televenta</b> es la modalidad de marketing directo <b>no impreso</b> que usa la televisión como soporte de venta a distancia. El telemarketing usa el teléfono. El emailing usa el correo electrónico."},
+{id:3,t:"T10",s:"docx",q:"Consiste en crear campañas de anuncios personalizados para aquellos usuarios que han visitado previamente tu web y no han realizado compra.",o:["Marketing online","Remarketing","Publicidad en buscadores","Marketing directo"],c:1,e:"El <b>remarketing</b> crea campañas personalizadas para usuarios que ya visitaron tu web pero no compraron. Aprovecha las cookies de navegación. Objetivo: incrementar el ROI."},
+{id:4,t:"T11",s:"docx",q:"¿Dónde aparece recogido el horario de protección al menor en TV?",o:["Ley general de comunicación audiovisual","Ley general de publicidad","Ley de publicidad engañosa","Ley de competencia desleal"],c:0,e:"El horario de protección al menor (6:00h-22:00h) en televisión está recogido en la <b>Ley General de Comunicación Audiovisual</b>. Esta ley también limita la publicidad en TV a un máximo de 12 minutos por hora."},
+{id:5,t:"T12",s:"docx",q:"El cuadro de mandos de una campaña de medios:",o:["Es un documento independiente que no se integra dentro del plan de medios","Se lleva a cabo siempre de forma trimestral","Es una herramienta de control empresarial general que se integra en el plan de medios para establecer estrategias que ayuden a la consecución de los objetivos del mismo","A y B correctas"],c:2,e:"El <b>cuadro de mandos</b> (dashboard) se integra en el plan de medios. Es un documento esquemático que facilita actuaciones rápidas. Estructura: planificación, análisis, fijación de estrategias e indicadores."},
+{id:6,t:"T13",s:"docx",q:"¿Cuál de las siguientes afirmaciones corresponde al esquema tradicional y no al coste objetivo/permitido?",o:["El mercado competitivo marca las pautas de la planificación de costes","Los precios determinan los costes","Los costes determinan los precios","Los costes son administrados por grupos interdisciplinarios"],c:2,e:"En el <b>esquema tradicional</b> los <b>costes determinan los precios</b>. En el coste objetivo es al revés: los precios determinan los costes (se parte del precio de mercado y se resta el margen deseado)."},
+{id:7,t:"T14",s:"docx",q:"¿Cuál de los siguientes parámetros debe aparecer en un informe de rentabilidad de campañas?",o:["Share de audiencia","Cobertura útil","Coste por rating point (C/GRP)","Visitantes únicos"],c:2,e:"El <b>C/GRP</b> pertenece al <b>informe de rentabilidad</b>, junto con el CPM. El share de audiencia va en el informe de medios y soportes. La cobertura útil va en el informe de análisis de campaña."},
+{id:8,t:"T15",s:"docx",q:"¿Cuál de los siguientes NO forma parte de los servicios que ofrecen las empresas de press-clipping?",o:["Elaborar comunicados de prensa","Rastrear información en una amplia cobertura geográfica en medios escritos y digitales","Observar la presencia de la competencia en los medios","Proporcionar a primera hora de la mañana un resumen de prensa"],c:0,e:"<b>Elaborar comunicados de prensa</b> NO es un servicio de press clipping, sino de <b>publicity/RRPP</b>. Las empresas de press clipping monitorizan lo que se publica en los medios sobre una marca, pero no generan contenido propio."},
+{id:9,t:"T14",s:"docx",q:"¿Qué herramienta informática ofrece datos de inversión publicitaria en España?",o:["InfoIo","Instar planning","Instar social","Kantar media"],c:0,e:"<b>Info ío</b> (antes Info XXI) es el software de InfoAdex con todos los datos sobre la inversión publicitaria en España. Instar Planning testea campañas para conocer el ROI. Instar Social mide interacción en redes sociales."},
+{id:10,t:"T8",s:"docx",q:"Dentro de los principales formatos de publicidad exterior, ¿cuál se define como una cubierta o estructura protegida por tres paredes que protege un espacio determinado?",o:["Vallas","Cabinas telefónicas","Marquesina","Mobiliario urbano"],c:2,e:"La <b>marquesina</b> es la cubierta protegida por tres paredes que se asocia con las paradas de autobús. Es un tipo de mobiliario urbano que también sirve como soporte publicitario."},
+{id:11,t:"T10",s:"docx",q:"¿Qué formato de publicidad online utiliza banners y pop-ups?",o:["Publicidad en vídeo","Publicidad móvil","Marketing por correo electrónico","Displays"],c:3,e:"Los <b>displays</b> transmiten visualmente un mensaje comercial usando texto, logotipos, animaciones o fotografías. Son principalmente los <b>banners y pop-ups</b>. Efectivos pero evitables con bloqueadores."},
+{id:12,t:"T12",s:"docx",q:"¿Qué método de análisis multicriterio descompone problemas en estructuras jerárquicas?",o:["Ponderación lineal (scoring)","Proceso de análisis jerárquico (AHP)","Método de sustracción","Método integrador"],c:1,e:"El <b>AHP</b> descompone un problema en estructura jerárquica con 3 niveles: objetivo, criterios y alternativas. El <b>Scoring</b> se emplea cuando hay poca información o incertidumbre."},
+{id:13,t:"T9",s:"docx",q:"¿Qué tipo de publicidad utiliza eventos y comunicados de prensa?",o:["Publicity","Marketing directo","Publicidad en internet","Publicidad exterior"],c:0,e:"La <b>publicity</b> utiliza herramientas de comunicación y RRPP como comunicados de prensa, eventos, patrocinio y concursos. La marca <b>no paga</b> al medio por difundir la acción. Su objetivo es la imagen de marca, no la venta."},
+{id:14,t:"T9",s:"docx",q:"¿Qué método de publicidad directa utiliza un buzoneo en el correo personalizado enviado por código postal?",o:["Buzoneo","Mailing","Televenta","Email marketing"],c:1,e:"El <b>mailing</b> es un buzoneo personalizado enviado por correo postal que espera una respuesta del receptor. El destinatario lo recibe porque ha dado su consentimiento previo."},
+{id:15,t:"T13",s:"docx",q:"¿Cómo se calcula el coste permitido en target costing?",o:["Precio de venta esperado - margen de beneficio deseado","Coste admisible + margen de beneficio","Método de adición","Método funcional innovador"],c:0,e:"<b>Coste permitido = Precio de venta esperado - Margen de beneficio deseado (target profit)</b>. El proceso parte del mercado: se fija el precio que el mercado acepta y se resta el margen para obtener el máximo coste admisible."},
+{id:16,t:"T11",s:"docx",q:"¿Qué tipo de publicidad se considera engañosa según la LGP?",o:["Que atenta contra la dignidad","Que induce a la confusión con competidores","Que usa técnicas subliminales","Que induce a error en sus indicaciones"],c:3,e:"La <b>publicidad engañosa</b> trata de <b>inducir a error</b> en sus indicaciones: características de los bienes, precio, condiciones de adquisición, etc. Atentar contra la dignidad es ilícita genérica. Inducir a confusión es desleal."},
+{id:17,t:"T8",s:"docx",q:"¿Cuál es una característica de la publicidad exterior?",o:["Visibilidad constante en la calle","Mensaje completo","No se usa para segmentar audiencias","Poca variedad de soportes"],c:0,e:"La <b>visibilidad constante en la calle</b> es la característica principal de la publicidad exterior. El mensaje es breve (no completo). Sí permite segmentación por ubicación y tiene gran variedad de soportes."},
+{id:18,t:"T10",s:"docx",q:"¿Qué tipo de publicidad en internet utiliza SEO y SEM?",o:["Publicidad en buscadores","Marketing por correo electrónico","Publicidad en redes sociales","Displays"],c:0,e:"La <b>publicidad en buscadores</b> usa <b>SEO</b> (orgánico) y <b>SEM</b> (de pago) para aparecer en la parte superior de los resultados del motor de búsqueda (SERP)."},
+{id:19,t:"T10",s:"docx",q:"Newsletter o boletín es un ejemplo de:",o:["Publicidad en buscadores","Displays","Marketing por correo electrónico","Publicidad móvil"],c:2,e:"La <b>newsletter</b> es el ejemplo prototípico del <b>marketing por correo electrónico</b>. Se envía de forma regular a usuarios suscritos para publicitar novedades y mantener fresca la imagen de marca."},
+{id:20,t:"T15",s:"docx",q:"¿Qué herramienta de monitorización es específica para Twitter?",o:["Hootsuite","TweetDeck","Google alerts","Flipboard"],c:1,e:"<b>TweetDeck</b> y TweetReach son herramientas específicas para <b>Twitter</b>. Miden el impacto de las conversaciones y localizan influencers. Hootsuite monitoriza múltiples redes."},
+{id:21,t:"T8",s:"docx",q:"¿Cuál de los siguientes soportes no es un MUPI?",o:["Cabina de teléfono","Marquesinas","Monopostes","Papeleras"],c:2,e:"Los <b>monopostes</b> son grandes vallas con un solo poste, publicidad exterior estática grande, no MUPI. El MUPI (Mueble Urbano para la Presentación de Información) se encuentra junto a marquesinas, contenedores, bancos y papeleras."},
+{id:22,t:"T9",s:"docx",q:"Nunca debe ir direccionado a una persona o titular que no haya expresado su voluntad de recibir publicidad por parte del emisor.",o:["Buzoneo","Mailing","Emailing","Publicidad directa"],c:0,e:"Según el material del profesor, el <b>buzoneo</b> nunca debe ir direccionado a una persona que no haya expresado su voluntad de recibirlo. Para casos personalizados existe el mailing."},
+{id:23,t:"T10",s:"docx",q:"¿Cuál es la mejor posición para insertar un banner en una página web?",o:["Parte superior de una página y en el lateral izquierdo","Parte superior de una página y lateral derecho","Parte inferior de una página y lateral izquierdo","Parte inferior de una página y lateral derecho"],c:1,e:"Son más eficaces los banners en la <b>parte superior + lateral derecho</b> porque son más visibles. Los banners horizontales superiores se llaman <b>leaderboard</b> y los verticales laterales <b>skycrapers</b>."},
+{id:24,t:"T11",s:"docx",q:"¿Dónde aparece recogido el horario de protección al menor en TV? (2)",o:["Ley general de comunicación audiovisual","Ley general de publicidad","Ley de publicidad engañosa","Ley de competencia desleal"],c:0,e:"El horario de protección al menor aparece en la <b>Ley General de Comunicación Audiovisual</b>. La LGP regula la publicidad ilícita en general. La Ley de Competencia Desleal prohíbe los actos de competencia desleal."},
+{id:25,t:"T12",s:"docx",q:"Es un documento donde se refleja las fases que componen la campaña publicitaria y es fundamental para poder desarrollar un plan de medios:",o:["Cuadro de mandos","Cursaje de emisión","Criterios de control","Análisis de contenido"],c:1,e:"El <b>cursaje de emisión</b> es el documento donde se reflejan las fases de la campaña publicitaria. Es fundamental para desarrollar el plan de medios."},
+{id:26,t:"T13",s:"docx",q:"El método de adición es aquel en el que:",o:["El coste objetivo coincide con el coste admisible dependiendo del precio de mercado y del margen de beneficios previstos","Se parte de la experiencia y de las posibilidades de producción ignorando la situación del mercado, pudiendo desembocar en costes objetivos no competitivos","Se combinan las perspectivas de los dos métodos anteriores, comparando el coste alcanzable con el coste objetivo","Opera en base a la definición de nuevos productos, clasificándolos según su uso y valor"],c:1,e:"El <b>método de adición</b> parte de la experiencia y posibilidades de producción, ignorando el mercado. La opción A es el método de sustracción. La C es el integrador. La D es el funcional innovador."},
+{id:27,t:"T14",s:"docx",q:"¿En qué formato se suelen presentar informes de resultados con gráficos?",o:["PDF","JPG","Word","Excel"],c:0,e:"Los informes de resultados con gráficos se presentan en <b>PDF</b> para una visualización visual del progreso. Los informes con datos numéricos (costes, porcentajes) se exportan en <b>XLS o CSV</b>."},
+{id:28,t:"T15",s:"docx",q:"El press clipping es:",o:["Una herramienta para la creación de contenidos","Una herramienta orientada a desarrollar la evaluación de las informaciones difundidas en noticias, entrevistas y reportajes sobre una determinada marca y la elaboración de informes que resuman la cobertura informativa publicada en los medios","Una técnica que cada vez se utiliza menos debido a los avances tecnológicos","Un servicio de asesoría y consultoría personalizada"],c:1,e:"El <b>press clipping</b> es la opción B: herramienta orientada a evaluar las informaciones difundidas sobre una marca y elaborar informes que resuman la cobertura informativa. No crea contenidos. Sigue siendo muy usada."},
+{id:29,t:"T12",s:"docx",q:"¿Qué método de análisis multicriterio se usa en situaciones de incertidumbre?",o:["Ponderación lineal (scoring)","Proceso de análisis jerárquico (AHP)","Método de adición","Método integrador"],c:0,e:"La <b>ponderación lineal (scoring)</b> se emplea cuando hay poca información o <b>incertidumbre</b>. Es compensatorio y asigna un valor a cada alternativa. El AHP descompone el problema en estructura jerárquica."},
+{id:30,t:"T10",s:"docx",q:"¿Qué tipo de publicidad online utiliza banners y pop-ups? (2)",o:["Publicidad en vídeo","Publicidad móvil","Marketing por correo electrónico","Displays"],c:3,e:"Los <b>displays</b> son la forma de publicidad online que usa banners y pop-ups. Soportes gráficos que transmiten visualmente un mensaje comercial."},
+{id:31,t:"T13",s:"docx",q:"¿Qué parámetro indica el coste de mil impresiones de un anuncio online?",o:["CPM","CPC","CPL","C/RP"],c:0,e:"El <b>CPM</b> (Coste Por Mil) en online indica el coste de mil impresiones. Fórmula: <b>CPM = Coste total / (Impresiones / 1.000)</b>. El CPC es coste por clic. El CPL es coste por lead. El C/RP es offline."},
+{id:32,t:"T14",s:"docx",q:"¿Cuál de las siguientes opciones es el software de análisis televisivo del grupo Kantar Media?",o:["Press clipping","TOM micro","Info ío","Instar Analytics"],c:3,e:"<b>Instar Analytics</b> (antes InfoSys) es el software de análisis televisivo del grupo <b>Kantar Media</b>. Utilizado en más de 30 países por más de 9.000 profesionales. TOM Micro es de ODEC. Info ío es de InfoAdex."},
+{id:33,t:"T12",s:"docx",q:"¿Cuál de las siguientes opciones es un método postest publicitario?",o:["Curva de respuestas","Test de conceptos","Test de expresiones creativas","Test de alternativas"],c:0,e:"La <b>curva de respuestas</b> es un método <b>postest</b>: relaciona la presión publicitaria con el efecto publicitario. Los otros tres son métodos <b>pretest</b> (realizados antes de la campaña)."},
+{id:34,t:"T11",s:"docx",q:"¿Qué tipo de publicidad ilícita utiliza estímulos fronterizos con los umbrales de los sentidos?",o:["Engañosa","Desleal","Subliminal","Vulgar"],c:2,e:"La <b>publicidad subliminal</b> actúa mediante estímulos de intensidades <b>fronterizas con los umbrales de los sentidos</b> sin ser conscientemente percibida. Ejemplo clásico: Marlboro en Fórmula 1 con el código de barras."},
+{id:35,t:"T9",s:"docx",q:"¿Cuál es un ejemplo de marketing directo impreso?",o:["Televenta","Cupón de respuesta en prensa","Telemarketing","Mailing"],c:1,e:"El <b>cupón de respuesta en prensa</b> es marketing directo <b>impreso</b>: un cupón de descuento insertado en un medio impreso, fácil de rellenar. La televenta usa TV. El telemarketing usa el teléfono."},
+{id:36,t:"T13",s:"docx",q:"¿Qué parámetro mide el coste de impactar a un 1% del público objetivo?",o:["CPM","C/RP","CPC","CPL"],c:1,e:"El <b>C/RP (Coste por Rating Point)</b> representa el coste de impactar a un <b>1% del público objetivo</b>. Es un parámetro offline (TV, radio). El CPM mide el coste de mil impactos o impresiones."},
+{id:37,t:"T13",s:"docx",q:"¿Cómo se calcula el coste permitido en target costing? (2)",o:["Precio de venta esperado - margen de beneficio deseado","Coste admisible + margen de beneficio","Método de adición","Método funcional innovador"],c:0,e:"<b>Coste permitido = Precio de venta esperado - Target profit</b>. El mercado fija el precio y restando el beneficio deseado se obtiene el máximo coste admisible para el producto o servicio."},
+{id:38,t:"T11",s:"docx",q:"¿Qué tipo de publicidad se considera engañosa según la LGP? (2)",o:["Que atenta contra la dignidad","Que induce a confusión con competidores","Que usa técnicas subliminales","Que induce a error en sus indicaciones"],c:3,e:"La <b>publicidad engañosa</b> induce a error en sus indicaciones: características, precio, condiciones de adquisición, etc. Atentar contra la dignidad es ilícita genérica. Inducir a confusión es desleal. Las técnicas subliminales son publicidad subliminal."},
+{id:39,t:"T8",s:"docx",q:"Entre los tipos de carteles PLV, localizamos:",o:["Colgantes, mástiles, indicadores y stopper","Colgantes, indicadores y stopper","Colgantes, expositores, demostrativos y stopper","Colgantes, displays, luminosos y folletos"],c:0,e:"Los tipos de carteles PLV son: <b>colgantes</b> (del techo), <b>mástiles</b> (base en el suelo), <b>indicadores</b> (señalan una sección) y <b>stoppers</b> (sobresalen del lineal con mensajes breves). Los displays, luminosos y expositores son otros formatos de PLV."},
+{id:40,t:"T9",s:"docx",q:"Indica cuál de las siguientes no es una forma publicitaria específica de la publicity:",o:["Comunicados de prensa","Actividades de responsabilidad social corporativa","Mailing","Concursos, promociones, sorteos"],c:2,e:"El <b>mailing</b> es <b>publicidad directa</b>, no publicity. Las formas de publicity incluyen: comunicados de prensa, eventos, patrocinio, concursos, responsabilidad social, influencer marketing. La publicity no paga espacios; el mailing sí tiene coste."},
+{id:41,t:"T10",s:"docx",q:"Es una estrategia publicitaria que se centra en tácticas no convencionales de bajo coste para promocionar un producto o servicio:",o:["Remarketing","Publicity","Marketing de guerrilla","Marketing en redes sociales"],c:2,e:"El <b>marketing de guerrilla</b> se centra en tácticas <b>no convencionales de bajo coste</b>. Objetivo: sorprender al consumidor, causar impresión duradera y crear entusiasmo social. Tipos: outdoor, indoor y emboscada."},
+{id:42,t:"T11",s:"docx",q:"¿Qué ley recoge la prohibición de la comunicación comercial de los cigarrillos?",o:["Ley General de Comunicación Audiovisual","Ley de Competencia Desleal","Ley de Publicidad Engañosa","Ley General de Publicidad"],c:0,e:"La <b>Ley General de Comunicación Audiovisual</b> regula la prohibición de publicidad de productos como cigarrillos en televisión. La LGP es la normativa general de publicidad ilícita."},
+{id:43,t:"T12",s:"docx",q:"El cuadro de mandos de una campaña de medios: (2)",o:["Es un documento independiente que no se integra dentro del plan de medios","Se lleva a cabo siempre de forma trimestral","Es una herramienta de control empresarial general que se integra en el plan de medios para establecer estrategias que ayuden a la consecución de los objetivos del mismo","A y B son correctas"],c:2,e:"El <b>cuadro de mandos</b> se integra en el plan de medios para establecer estrategias. Componentes: planificación, análisis, fijación de estrategias e indicadores offline y online."},
+{id:44,t:"T13",s:"docx",q:"El modelo Stats se obtiene de:",o:["Multiplicar el porcentaje de los consumidores que han comprado la marca habiendo visto su publicidad por los que han comprado pero no han visto la publicidad","Sumar los porcentajes de consumidores que han visto la publicidad sin comprar y los que no la han visto y han comprado","Dividir el porcentaje de los consumidores que han comprado la marca publicitada habiendo visto su publicidad entre los que han comprado pero no han visto la publicidad","Dividir el porcentaje de los consumidores que no han comprado la marca habiendo visto su publicidad entre los que sí han comprado"],c:2,e:"El <b>modelo Stats</b> = <b>dividir</b> el % de consumidores que compraron habiendo visto la publicidad entre los que compraron sin verla. Se calcula en un período corto (ej. una semana) mediante panel o sondeo."},
+{id:45,t:"T14",s:"docx",q:"Es un software que permite a los planificadores de medios testear sus campañas de publicidad para conocer con anterioridad cuál sería su ROI:",o:["Instar Planning","Instar Analytics","Tom Micro","Instar Social"],c:0,e:"<b>Instar Planning</b> permite testear campañas para conocer el ROI con anterioridad. Instar Analytics analiza audiencias televisivas. TOM Micro evalúa planes de medios. Instar Social mide interacción en RRSS."},
+{id:46,t:"T15",s:"docx",q:"Indica cuál de los siguientes programas podrías utilizar para realizar tu press clipping:",o:["Tom Micro","Freepik","Feedly","Instar Analytics"],c:2,e:"<b>Feedly</b> es un agregador de contenido online (RSS) que puede utilizarse para press clipping. TOM Micro es para planes de medios. Freepik es banco de imágenes."},
+{id:47,t:"T11",s:"docx",q:"¿Qué ley regula principalmente la publicidad ilícita en España?",o:["Ley 34/1988, General de Publicidad","Ley 3/1991, de Competencia Desleal","Real Decreto Legislativo 1/2007","Ley General de Comunicación Audiovisual"],c:0,e:"La <b>Ley 34/1988, General de Publicidad (LGP)</b> es la normativa principal que regula la publicidad ilícita en España (engañosa, desleal y subliminal), los contratos publicitarios y las sanciones."},
+{id:48,t:"T15",s:"docx",q:"¿Qué herramienta de monitorización es específica para Twitter? (2)",o:["Hootsuite","TweetDeck","Google Alerts","Flipboard"],c:1,e:"<b>TweetDeck</b> y TweetReach son herramientas específicas para <b>Twitter</b>. Hootsuite monitoriza múltiples redes. Google Alerts rastrea la web. Flipboard es un agregador de noticias."},
+{id:49,t:"T8",s:"docx",q:"¿Qué tipo de cartel PLV se cuelga del techo?",o:["Colgantes","Mástiles","Indicadores","Stopper"],c:0,e:"Los carteles <b>colgantes</b> cuelgan del techo de los establecimientos. Los mástiles tienen base en el suelo. Los indicadores señalan una sección. Los stoppers sobresalen del lineal con mensajes breves."},
+{id:50,t:"T11",s:"docx",q:"¿Qué productos no pueden publicitarse en televisión?",o:["Tabaco","La que infrinja lo dispuesto en la normativa que regule la publicidad de determinados productos","Los productos estupefacientes, psicotrópicos y medicamentos, cigarrillos y bebidas alcohólicas de más de 20 grados","Todas son correctas"],c:2,e:"No pueden publicitarse en TV: estupefacientes, psicotrópicos y medicamentos (sin autorización), <b>cigarrillos</b> y tabaco, y <b>bebidas alcohólicas de más de 20 grados</b>. Recogido en la Ley General de Comunicación Audiovisual."},
+{id:51,t:"T12",s:"docx",q:"¿Cuáles de los siguientes son métodos de postest?",o:["Test de conceptos, test de expresiones creativas y test de alternativas","Análisis de contenido y encuesta","Basados en el recuerdo, en las ventas y curva de respuestas","Técnicas de estudio, monitoreo y evaluación"],c:2,e:"Los métodos de <b>postest</b> son: <b>basados en el recuerdo</b>, <b>basados en las ventas</b> y <b>curva de respuestas</b>. Los test de conceptos, expresiones creativas y alternativas son métodos <b>pretest</b>."},
+{id:52,t:"T13",s:"docx",q:"El fee mensual:",o:["Se trata de una cuota mensual fija que cobra la agencia al cliente por los servicios","Se trata de una cuota mensual variable que cobra la agencia al cliente por los servicios","Es un descuento mensual en la factura que la agencia remite al cliente","Se refiere a los honorarios de la empresa, que pueden oscilar entre un 10% y un 12%"],c:0,e:"El <b>fee mensual</b> es una <b>cuota mensual FIJA</b> por los servicios a prestar, según un programa de acciones, calendario y número de horas determinadas al mes. Los honorarios son el 10-12% del total de inversión."},
+{id:53,t:"T9",s:"docx",q:"¿Cuál de las siguientes no es una técnica de relaciones públicas mediante la cual obtener contenidos no pagados?",o:["El comunicado de prensa","Anuncios en radio","Publicaciones en sus redes sociales y blog corporativo","Las ruedas y convocatorias de prensa"],c:1,e:"Los <b>anuncios en radio</b> son publicidad pagada, no una técnica de RRPP para contenidos no pagados. Las técnicas de RRPP incluyen: comunicados de prensa, ruedas de prensa, publicaciones en RRSS y blog corporativo."},
+{id:54,t:"T15",s:"docx",q:"¿A quiénes NO están destinados los servicios de seguimiento de medios?",o:["Los periodistas","Agencia de marketing y publicidad","Gabinetes de prensa y departamentos de comunicación","Empresas y organismos públicos"],c:1,e:"Los servicios de seguimiento de medios se destinan a: periodistas, gabinetes de prensa, departamentos de comunicación/marketing/RRPP, empresas, instituciones y organismos públicos. Las <b>agencias de marketing y publicidad</b> como tal no aparecen en el libro como clientes principales."},
+{id:55,t:"T9",s:"docx",q:"Una de las desventajas del mailing respecto del buzoneo es:",o:["Inseguridad con respecto a la eficiencia de las empresas distribuidoras especialistas en buzoneo","Dificultad del distribuidor a acceder a los buzones de los domicilios","El alto coste que requiere mantener las bases de datos actualizadas","Saturación de los buzones"],c:2,e:"El <b>alto coste de mantener las bases de datos actualizadas</b> es la principal desventaja del mailing. Las opciones A, B y D son desventajas del <b>buzoneo</b>."},
+{id:56,t:"T10",s:"docx",q:"La promoción de un sitio web en buscadores puede realizarse de forma orgánica o de pago, es decir:",o:["SERP o SEO","SERP, SEO o SEM","SEO o SEM","SEO o SEA"],c:2,e:"La publicidad en buscadores puede ser orgánica (<b>SEO</b>) o de pago (<b>SEM</b>). <b>SERP</b> es la página de resultados en sí misma, no una forma de promoción."},
+{id:57,t:"T11",s:"docx",q:"¿Qué franja de protección horaria se aplicará en televisión los días festivos como el 1 y el 6 de enero?",o:["De 8 a 12 horas","De 8 a 11 horas","De 9 a 12 horas","De 8:30 a 12:30 horas"],c:2,e:"En días festivos señalados la franja de protección al menor en TV es <b>de 9:00 a 12:00 horas</b>. En días normales: de 6:00 a 22:00 horas. Recogido en la Ley General de Comunicación Audiovisual."},
+{id:58,t:"T8",s:"docx",q:"Una de las ventajas de las PLV es que:",o:["Se encuentran en zonas de paso frecuente por los consumidores, lo que favorece el impulso de compra","Alto coste de producción","Se trata de una publicidad de vida ilimitada, por lo que no hay que renovar los formatos","Hay que saber destacarse de la competencia"],c:0,e:"Una ventaja del PLV es que se encuentran en <b>zonas de paso frecuente</b>, favoreciendo el impulso de compra. El bajo coste (no alto) también es ventaja. Las desventajas incluyen vida limitada y saturación."},
+{id:59,t:"T12",s:"docx",q:"Se define como el grado en el que se logran los objetivos publicitarios establecidos:",o:["Eficacia","Eficiencia","Efectividad","Todas son correctas"],c:0,e:"La <b>eficacia</b> publicitaria es el grado en que se logran los objetivos establecidos. La <b>eficiencia</b> es obtener el máximo rendimiento con los recursos disponibles. La <b>efectividad</b> es el equilibrio entre eficacia y eficiencia."},
+{id:60,t:"T13",s:"docx",q:"El modelo de contribución:",o:["Se centra en identificar y cuantificar el peso que tiene en una conversión cada una de las acciones que han intervenido en el proceso","Se obtiene de dividir el porcentaje de consumidores que han comprado la marca habiendo visto su publicidad entre los que han comprado pero no han visto la publicidad","Atribuye únicamente a la última o a la primera acción realizada el éxito de la conversión","A y B son correctas"],c:0,e:"El <b>modelo de contribución</b> identifica y cuantifica el <b>peso de CADA acción</b> en una conversión. Se diferencia del modelo de atribución (last click, first click) en que distribuye el mérito entre todas las acciones."},
+{id:61,t:"T14",s:"docx",q:"¿Qué programa nos ofrece tablas y mapas para la selección de los soportes del plan de medios?",o:["Infoío","Tom Micro","Instar Social","Instar Analytics"],c:1,e:"<b>TOM Micro</b> (de ODEC) ofrece tablas y mapas para la selección de soportes (tablas de duplicaciones, acumulación de coberturas y diagrama de Christie). También: rankings, evaluación de planes de medios y análisis televisivo."},
+{id:62,t:"T8",s:"docx",q:"Son unas estanterías de distinta tipología que contienen los productos y se colocan en las entradas, salidas y lugares estratégicos de los establecimientos:",o:["Mástiles","Displays","Expositores","Demostradores"],c:2,e:"Los <b>expositores o exhibidores</b> son estanterías con productos colocadas en entradas, salidas y lugares estratégicos. Los displays son pequeños soportes con diseño atractivo. Los mástiles son carteles con base en el suelo."},
+{id:63,t:"T10",s:"docx",q:"¿Cuál de las siguientes es una estrategia de marketing de guerrilla?",o:["Telemarketing","Flashmob","Marketing directo","Emailing"],c:1,e:"El <b>flashmob</b> es marketing de guerrilla tipo <b>emboscada</b>: aprovecha la audiencia de un evento para promocionar un producto de forma sorprendente. Ejemplo: el flashmob de la serie Glee en un centro comercial en Roma."},
+{id:64,t:"T8",s:"docx",q:"Una de las desventajas de la publicidad exterior es que:",o:["Se encuentra más adscrita al campo de la promoción de ventas que al de la planificación de medios","Disponibilidad de numerosos emplazamientos en soportes estáticos y móviles","Cada localidad cuenta con su propia normativa sobre las restricciones de la publicidad exterior en los espacios públicos","Grandes posibilidades de influencia e imagen de prestigio para el anunciante local"],c:2,e:"Una desventaja de la publicidad exterior es que <b>cada localidad tiene su propia normativa</b>. La disponibilidad de emplazamientos (B) y la imagen de prestigio (D) son ventajas. La opción A es desventaja del PLV."},
+{id:65,t:"T9",s:"docx",q:"Una de las desventajas de la publicity es que:",o:["Aumento de la visibilidad de la marca ante una audiencia amplia","Tiene un coste menor que la publicidad","La imagen de marca gana credibilidad al relacionarse con noticias publicadas en medios de prestigio","No tienes todo el control de lo que se va a hacer o decir de ella"],c:3,e:"Una desventaja de la publicity es que <b>no se tiene control total</b>: la información puede no coincidir con lo que el departamento de comunicación quiere transmitir. Las opciones A, B y C son ventajas."},
+{id:66,t:"T15",s:"docx",q:"¿Qué tipo de empresa realiza seguimiento de medios audiovisuales?",o:["Servicios de press clipping","Broadcast monitors","Agregadores de contenido","Herramientas de seguimiento de redes sociales"],c:1,e:"Las empresas de <b>broadcast monitors</b> realizan seguimiento de TV y radio en tiempo real. Las de press clipping se centran en medios escritos. Los agregadores de contenido monitorizan noticias online."},
+{id:67,t:"T15",s:"docx",q:"La reputación online puede definirse como:",o:["El conjunto de elementos que reflejan el prestigio que tiene una persona, marca o empresa en la red","La cantidad de likes y followers que tiene en una determinada red social","Las publicaciones sobre la marca en medios de comunicación","La información que aparece en internet sobre el anunciante"],c:0,e:"La <b>reputación online</b> es el conjunto de elementos que reflejan el prestigio de una persona, marca o empresa en la red. No se reduce solo a likes (B), ni a publicaciones en medios (C)."},
+{id:68,t:"T12",s:"docx",q:"Porcentaje de usuarios que realiza una acción deseada, como completar un formulario, registrarse, suscribirse a un boletín informativo o cualquier otra actividad que no sea simplemente navegar por una página web.",o:["Tasa de conversión","Retorno de inversión","Claves de rendimiento","Número de visitantes"],c:0,e:"La <b>tasa de conversión</b> = (Conversiones / Visitantes) x 100. Mide el porcentaje de usuarios que realiza una acción deseada. El ROI mide la rentabilidad de la inversión."},
+{id:69,t:"T13",s:"docx",q:"La siguiente fórmula nos ayuda a calcular: Coste total / (Número de impresiones / 1000)",o:["CPM","CPC","CPL","CTR"],c:0,e:"<b>CPM = Coste total / (Número de impresiones / 1.000)</b>. Es el coste de que un anuncio se muestre mil veces. El CPC = Coste/Clics. El CTR = (Clics/Impresiones)x100."},
+{id:70,t:"T13",s:"docx",q:"Los impuestos a aplicar en la factura son:",o:["20% de IVA y 14% de IRPF","21% de IVA y 15% de IRPF","21% de IVA, el IRPF no siempre es obligatorio","15% de IVA y 21% de IRPF"],c:1,e:"En la factura de publicidad se aplica un <b>21% de IVA</b> sobre el importe bruto y un <b>15% de IRPF</b> que se resta sobre la base imponible. Si se acaba de dar de alta como autónomo, el IRPF es del 7%."},
+{id:71,t:"T15",s:"docx",q:"¿Qué otra herramienta podemos utilizar para comprobar el éxito de la campaña además del press clipping?",o:["El comunicado de prensa","La encuesta a los consumidores","Informe específico para campañas en internet","Salas de prensa virtual"],c:1,e:"Además del press clipping, la otra herramienta es la <b>encuesta a los consumidores</b>. El press clipping analiza lo publicado en medios; la encuesta obtiene la opinión directa de los consumidores."},
+{id:72,t:"T15",s:"docx",q:"Una de las ventajas que se pueden obtener con el seguimiento de los medios es:",o:["Utilizar toda la información recuperada como valor estratégico en beneficio de otros","Aminorar el riesgo de error en la toma de decisiones","Evaluación de las informaciones difundidas en noticias","Conocer informaciones secretas de otras empresas"],c:1,e:"<b>Aminorar el riesgo de error en la toma de decisiones</b> es una ventaja del seguimiento de medios. La opción A es incorrecta: se usa en beneficio propio (no de otros)."},
+{id:73,t:"T8",s:"docx",q:"Son las posiciones dentro de un supermercado situadas en los extremos de los lineales:",o:["Cabecera de góndola","Cabecera de jábega","Cabecera de lineal","Tótem"],c:0,e:"Las <b>cabeceras de góndola</b> son las posiciones en los extremos de los lineales. Tienen la mayor demanda promocional del punto de venta."},
+{id:74,t:"T11",s:"docx",q:"En España, el Código de Conducta Publicitaria se lleva a cabo mediante la Asociación para la Autorregulación de la Comunicación Comercial, conocida como:",o:["Sello de calidad","Ley de Publicidad General","Código deontológico","Autocontrol"],c:3,e:"<b>AUTOCONTROL</b> gestiona el Código de Conducta Publicitaria en España desde 1996. Las compañías adheridas se someten al <b>Jurado de la Publicidad</b>."},
+{id:75,t:"T15",s:"docx",q:"La información difundida a través de medios audiovisuales (televisión y radio):",o:["Solo puede conocerse en el momento de su emisión","Puede consultarse en cualquier momento","No se puede realizar seguimiento de la información difundida a través de medios audiovisuales","Ninguna respuesta es correcta"],c:0,e:"La información audiovisual <b>solo puede conocerse en el momento de su emisión</b>, al contrario que los medios escritos. Por eso existen las empresas de <b>broadcast monitors</b>."},
+{id:76,t:"T9",s:"docx",q:"La televenta, el cupón de descuento insertado en prensa y el telemarketing son formatos de:",o:["Publicidad directa","Publicity","Marketing directo","Marketing online"],c:2,e:"La televenta, el cupón de respuesta en prensa y el telemarketing son los <b>principales formatos de marketing directo</b>: sistema interactivo que provoca una respuesta medible usando uno o más medios."},
+{id:77,t:"T11",s:"docx",q:"¿Qué ley define qué es la publicidad ilícita y sus diferentes modalidades?",o:["Ley General de Publicidad","Ley General de Comunicación Audiovisual","Ley de Competencia Desleal","Ley de Publicidad Engañosa"],c:0,e:"La <b>Ley General de Publicidad (LGP, Ley 34/1988)</b> define la publicidad ilícita (engañosa, desleal y subliminal), los contratos publicitarios y las sanciones."},
+{id:78,t:"T13",s:"docx",q:"¿Qué nos permite calcular la siguiente fórmula? (Número de clics / número de impresiones) x 100",o:["CPM","CPC","CPL","CTR"],c:3,e:"<b>CTR = (Clics / Impresiones) x 100</b>. Mide la relevancia de los anuncios. CPM = Coste/(Impresiones/1.000). CPC = Coste/Clics. CPL mide rentabilidad en generación de leads."},
+{id:79,t:"T11",s:"docx",q:"Las empresas que se adhieren voluntariamente al Código Ético de Confianza Online muestran en tiendas online el sello de calidad como distintivo de:",o:["Garantía, seguridad, transparencia y confianza al navegar y comprar en sus plataformas","Calidad en la elección del producto y mayor número de ventas","Se comprometen a cumplir principios o códigos deontológicos establecidos por ellos mismos","Directrices sobre las Buenas Prácticas en la Publicidad de Productos de Software Interactivo"],c:0,e:"El sello de Confianza Online es un distintivo de <b>garantía, seguridad, transparencia y confianza</b> al navegar y comprar en las plataformas adheridas."},
+{id:80,t:"T10",s:"docx",q:"¿Para qué pueden utilizar las empresas los blogs?",o:["Para apuntalar su imagen de marca y mantener a los clientes informados","Para afianzar la información sobre los productos o servicios y generar contenido para las redes sociales","Para generar tráfico hacia la web principal","Todas son correctas"],c:3,e:"Las empresas usan los blogs para <b>todas</b> estas funciones: apuntalar imagen de marca, informar a clientes, afianzar información sobre productos, generar contenido para RRSS y generar tráfico hacia la web principal."},
+{id:81,t:"T9",s:"docx",q:"Otros formatos de marketing directo son:",o:["Marketing por catálogo, redes sociales y banners","Marketing online y eventos","Marketing emocional, brand content marketing y marketing experiencial","Flashmobs, marketing de guerrilla e influencer marketing"],c:0,e:"Otros formatos de marketing directo incluyen el <b>marketing por catálogo, redes sociales y banners</b>. Las opciones C y D son formas de publicity o marketing no convencional."},
+{id:82,t:"T12",s:"docx",q:"El modelo de contribución: (2)",o:["Se centra en identificar y cuantificar el peso que tiene en una conversión cada una de las acciones que han intervenido en el proceso","Se obtiene de dividir el porcentaje de consumidores que han comprado la marca habiendo visto su publicidad entre los que han comprado pero no han visto la publicidad","Atribuye únicamente a la última o a la primera acción realizada el éxito de la conversión","A y B son correctas"],c:0,e:"El <b>modelo de contribución</b> cuantifica el peso de cada acción en una conversión. El <b>Adstock</b> de Broadbent es un ejemplo: At = Tt + At-1."},
+{id:83,t:"T9",s:"docx",q:"¿Qué método de publicidad directa utiliza un buzoneo en el correo personalizado enviado por código postal? (2)",o:["Buzoneo","Mailing","Televenta","Email marketing"],c:0,e:"La respuesta marcada por el profesor es <b>Buzoneo</b>. Responde Buzoneo en el examen siguiendo el criterio del documento oficial."},
+{id:84,t:"T14",s:"docx",q:"¿Qué opción personaliza accesos rápidos en Instar Analytics?",o:["Base de datos","Modo offline","Quick Access Toolbar","Editor de CSV"],c:2,e:"La <b>Quick Access Toolbar</b> permite al usuario de Instar Analytics crear su propio acceso directo a las herramientas que más utiliza."},
+{id:85,t:"T13",s:"docx",q:"¿Qué retribución cobra una cuota estandarizada del 10-12%?",o:["Honorarios","Por horas","Fee mensual","Porcentaje de medios"],c:0,e:"Los <b>honorarios</b> son una cuota estandarizada del 10-12% que se añaden al total de inversión de la campaña."},
+{id:86,t:"T13",s:"docx",q:"¿Qué sistema paga a la agencia una cantidad fija mensual?",o:["Fee mensual","Por horas","CPC","CPM"],c:0,e:"El <b>fee mensual</b> es una cuota mensual fija por los servicios a prestar, según un programa de acciones, calendario y número de horas determinadas al mes."},
+{id:87,t:"T13",s:"docx",q:"¿Qué alternativa retribuye por el volumen invertido en medios?",o:["Por horas","Fee mensual","CPL","Porcentaje de medios"],c:3,e:"El <b>porcentaje de medios</b> retribuye a la agencia con un porcentaje de lo que el anunciante gasta en el plan de medios (hasta el 15%)."},
+{id:88,t:"T10",s:"docx",q:"¿Qué estrategia impacta a usuarios que ya visitaron una web?",o:["Remarketing","Newsletter","Post patrocinado","Emailing"],c:0,e:"El <b>remarketing</b> crea anuncios personalizados para usuarios que ya visitaron tu web. Aprovecha las cookies para mostrarles los productos que vieron pero no compraron."},
+{id:89,t:"T11",s:"docx",q:"¿Qué publicidad actúa sin ser conscientemente percibida?",o:["Engañosa","Ilícita","Subliminal","Invasiva"],c:2,e:"La <b>publicidad subliminal</b> actúa mediante estímulos de intensidades fronterizas con los umbrales de los sentidos. Su prohibición refuerza el principio de autenticidad publicitaria."},
+{id:90,t:"T11",s:"docx",q:"¿Qué organismo se asocia a la autorregulación publicitaria en España?",o:["InfoAdex","Autocontrol","OJD","Kantar"],c:1,e:"<b>AUTOCONTROL</b> gestiona el Código de Conducta Publicitaria desde 1996. InfoAdex mide inversión publicitaria. OJD audita difusión de prensa."},
+{id:91,t:"T15",s:"docx",q:"¿Qué código se vincula a buenas prácticas en comercio online?",o:["EGM","GRP","Confianza online","AIMC Q Panel"],c:2,e:"El <b>Código Ético de Confianza Online</b> es el código deontológico del comercio electrónico y la publicidad digital en España. Las empresas que se adhieren muestran el sello de calidad."},
+{id:101,t:"T8",s:"kah",q:"¿Qué nombre recibe la publicidad exterior en pantallas interactivas?",o:["Publicidad móvil","DOOH Marketing","Publicidad estática","Publicidad impresa"],c:1,e:"<b>DOOH Marketing</b> (Digital Out Of Home) es la publicidad exterior interactiva. Pantallas digitales en espacios públicos. El 90% dice que les produce curiosidad (IAB Spain 2019)."},
+{id:102,t:"T8",s:"kah",q:"¿Qué soporte urbano tiene función propia y además muestra publicidad?",o:["Mobiliario estándar","OPI","Marquesina","MUPI"],c:3,e:"El <b>MUPI</b> tiene función pública propia y también sirve de soporte publicitario. El <b>OPI</b> no tiene otra función que ser soporte publicitario."},
+{id:103,t:"T8",s:"kah",q:"¿Qué cartelería PLV sobresale del lineal con mensajes breves?",o:["Stopper","Mástil","Colgante","Indicador"],c:0,e:"El <b>Stopper</b> sobresale perpendicularmente del lineal con mensajes breves ('oferta', '2x1'). El mástil tiene base en el suelo. El colgante cuelga del techo."},
+{id:104,t:"T8",s:"kah",q:"¿Qué PLV en forma de columna informa aunque no exponga producto?",o:["Display","Exhibidor","Tótem","Luminoso"],c:2,e:"El <b>Tótem</b> es el formato de PLV en forma de columna donde se puede leer información sobre un producto aunque no se exponga físicamente."},
+{id:105,t:"T8",s:"kah",q:"¿Cuál es la medida estándar habitual de una valla exterior?",o:["3x2 metros","8x3 metros","10x5 módulos","1x2 metros"],c:1,e:"La medida estándar de una <b>valla exterior</b> es de <b>8 x 3 metros</b>. Los anuncios se imprimen sobre papel, vinilo, lona o pintura."},
+{id:106,t:"T8",s:"kah",q:"¿Qué caracteriza el mensaje en publicidad exterior?",o:["Debe ser largo y técnico","Debe ser muy gráfico","Debe tener mucho texto","Debe evitar imágenes"],c:1,e:"El mensaje en publicidad exterior debe ser <b>muy gráfico</b>: imagen impactante y pocas palabras de rápida lectura. El tiempo de exposición es de unos segundos."},
+{id:107,t:"T8",s:"kah",q:"¿Qué soporte exterior se usa en paradas de autobús?",o:["Marquesina","Televenta","Filmlet","Mailing"],c:0,e:"La <b>marquesina</b> es la cubierta protegida por tres paredes que se asocia con las paradas de autobús. Es un tipo de mobiliario urbano que también sirve como soporte publicitario."},
+{id:108,t:"T8",s:"kah",q:"¿Qué ubicación de PLV está al extremo de un lineal?",o:["Display","Stopper","Cartel colgante","Cabecera de góndola"],c:3,e:"La <b>Cabecera de góndola</b> es la posición en los extremos de los lineales. Debido a su privilegiada ubicación, es el espacio con mayor demanda promocional."},
+{id:109,t:"T9",s:"kah",q:"¿Qué reparto no personalizado usa folletos u octavillas en buzones?",o:["Mailing","Buzoneo","Patrocinio","Comunicado"],c:1,e:"El <b>buzoneo</b> reparte información gratuita mediante folletos u octavillas de forma masiva y no personalizada. El mailing es la versión personalizada."},
+{id:110,t:"T9",s:"kah",q:"¿Qué buzoneo personalizado espera respuesta del receptor?",o:["Mailing","Buzoneo","Patrocinio","Nota de prensa"],c:0,e:"El <b>mailing</b> es un buzoneo personalizado por correo postal que espera una respuesta del receptor. El destinatario lo recibe porque ha dado su consentimiento previo."},
+{id:111,t:"T9",s:"kah",q:"¿Qué marketing directo vende a distancia usando TV?",o:["Telemarketing","Email marketing","Televenta","Cupón de prensa"],c:2,e:"La <b>televenta</b> usa la televisión como soporte de venta a distancia, presentando ofertas y productos que normalmente no se venden por canales habituales."},
+{id:112,t:"T9",s:"kah",q:"¿Qué modalidad de marketing directo utiliza el teléfono?",o:["Email marketing","Cupón de respuesta","Televenta","Telemarketing"],c:3,e:"El <b>telemarketing</b> usa el teléfono como herramienta comercial. La televenta usa la televisión. El email marketing usa el correo electrónico."},
+{id:113,t:"T9",s:"kah",q:"¿Qué acción de RRPP genera notoriedad sin contratar espacios?",o:["Anuncio en TV","Publicidad en vallas","Publicidad social","Comunicados de prensa"],c:3,e:"Los <b>comunicados de prensa</b> son herramienta de <b>publicity</b>: generan notoriedad sin pagar espacios. La marca NO paga al medio por difundir la acción."},
+{id:114,t:"T9",s:"kah",q:"¿Qué elemento del mailing presenta gráficamente el producto?",o:["Pedido","Sobre de retorno","Folleto o catálogo","Tarjeta de visita"],c:2,e:"El <b>folleto o catálogo</b> muestra el producto de forma gráfica e informativa. Elementos básicos del mailing: sobre + carta personalizada + folleto/catálogo + pedido."},
+{id:115,t:"T9",s:"kah",q:"¿Cuál es el objetivo principal de la publicity?",o:["Crear ventas directas","Emitir cupones","Difundir imagen de marca","Comprar espacios"],c:2,e:"El objetivo de la <b>publicity</b> es la <b>difusión de la imagen de marca</b>, no la venta directa. No se paga por la inserción. Se basa en RRPP, comunicados, eventos y contenidos de calidad."},
+{id:116,t:"T9",s:"kah",q:"¿Qué ventaja destaca en el mailing frente al buzoneo?",o:["Publicidad personalizada","Menor regulación","No usa base de datos","Es siempre gratuito"],c:0,e:"La principal ventaja del <b>mailing</b> es ser <b>publicidad personalizada</b>, con alto índice de selectividad y flexibilidad de formatos."},
+{id:117,t:"T10",s:"kah",q:"¿Qué publicidad online usa banners, pop-ups y soportes gráficos?",o:["Buscadores","Email marketing","RRSS","Displays"],c:3,e:"Los <b>Displays</b> transmiten visualmente un mensaje comercial usando texto, logotipos, animaciones o fotografías. Son principalmente los banners y pop-ups."},
+{id:118,t:"T10",s:"kah",q:"¿Cómo se llama la página a la que llega el usuario tras un clic?",o:["Inserción","Enlace patrocinado","Landing page","Pop-up"],c:2,e:"La <b>landing page</b> (página de aterrizaje) es la web donde los usuarios terminan tras hacer clic en un anuncio."},
+{id:119,t:"T10",s:"kah",q:"¿Qué término designa un enlace en resultados de buscador?",o:["Inserción","Enlace patrocinado","Landing page","Newsletter"],c:1,e:"El <b>enlace patrocinado</b> es un anuncio en forma de enlace que aparece en las páginas de resultados de un buscador (SERP). Los anuncios son para productos relacionados con las palabras clave de la búsqueda."},
+{id:120,t:"T10",s:"kah",q:"¿Qué estrategia impacta a usuarios que ya visitaron una web?",o:["Remarketing","Newsletter","Post patrocinado","Emailing"],c:0,e:"El <b>remarketing</b> crea anuncios personalizados para usuarios que ya visitaron tu web. Aprovecha las cookies para mostrarles los productos que vieron pero no compraron."},
+{id:121,t:"T10",s:"kah",q:"¿Qué formato publicitario aparece como ventana emergente?",o:["Banner","Pop-up","Blog","Newsletter"],c:1,e:"El <b>pop-up</b> son nuevas ventanas con contenido publicitario que el navegador abre cuando se hace clic en un enlace o se carga una página. Pueden bloquearse."},
+{id:122,t:"T10",s:"kah",q:"¿Qué ventaja clave ofrece internet como soporte publicitario?",o:["Sin métricas","Poca segmentación","Gran segmentación","Audiencia fija"],c:2,e:"La <b>gran segmentación</b> es una de las principales ventajas de internet: adapta el mensaje a un público específico según hábitos de navegación, intereses, geografía, etc."},
+{id:123,t:"T10",s:"kah",q:"¿Qué red social profesional se usa en campañas B2B?",o:["Instagram","Tiktok","Facebook","LinkedIn"],c:3,e:"<b>LinkedIn</b> es la plataforma orientada a los negocios (B2B). Es excelente para conectar con otras empresas y profesionales del sector. Se basa más en texto y artículos que en multimedia."},
+{id:124,t:"T10",s:"kah",q:"¿Qué marketing no convencional busca sorprender con creatividad?",o:["Marketing de guerrilla","Televenta","Mailing postal","Publicidad estática"],c:0,e:"El <b>marketing de guerrilla</b> se centra en tácticas no convencionales de bajo coste. Objetivo: sorprender al consumidor, causar impresión duradera y crear entusiasmo social."},
+{id:125,t:"T11",s:"kah",q:"¿Qué ley regula la publicidad ilícita en España?",o:["Ley 3/1991","Ley 34/1988 general de publicidad","Ley de TV","Ley de cookies"],c:1,e:"La <b>Ley 34/1988, General de Publicidad (LGP)</b> es la normativa principal que regula la publicidad ilícita en España: engañosa, desleal y subliminal."},
+{id:126,t:"T11",s:"kah",q:"¿Qué publicidad actúa sin ser conscientemente percibida?",o:["Engañosa","Ilícita","Subliminal","Invasiva"],c:2,e:"La <b>publicidad subliminal</b> actúa mediante estímulos de intensidades fronterizas con los umbrales de los sentidos. Ejemplo: Marlboro en Fórmula 1 con el código de barras."},
+{id:127,t:"T11",s:"kah",q:"¿Qué publicidad induce a error por su contenido o presentación?",o:["Publicidad engañosa","Publicidad directa","Publicidad comparativa","Publicidad social"],c:0,e:"La <b>publicidad engañosa</b> trata de inducir a error en sus indicaciones: características de los bienes, precio, condiciones de adquisición, etc."},
+{id:128,t:"T11",s:"kah",q:"¿Qué ley regula principalmente la publicidad en internet?",o:["Ley general de publicidad","Ley de competencia desleal","Ley de propiedad","LSSI"],c:3,e:"La <b>LSSI</b> (Ley 34/2002) regula la publicidad en internet: comercio electrónico, contratación en línea e información y publicidad online."},
+{id:129,t:"T11",s:"kah",q:"¿Qué organismo se asocia a la autorregulación publicitaria?",o:["InfoAdex","Autocontrol","OJD","Kantar"],c:1,e:"<b>AUTOCONTROL</b> gestiona el Código de Conducta Publicitaria en España desde 1996. Las empresas adheridas se someten al Jurado de la Publicidad."},
+{id:130,t:"T11",s:"kah",q:"¿Qué publicidad atenta contra la dignidad o vulnera derechos?",o:["Publicidad ilícita","Publicidad PLV","Publicidad exterior","Publicidad directa"],c:0,e:"La <b>publicidad ilícita</b> (art. 3 LGP) atenta contra la dignidad de la persona o vulnera los valores y derechos constitucionales, especialmente en lo referente a la infancia, la juventud y la mujer."},
+{id:131,t:"T11",s:"kah",q:"¿Qué código se vincula a buenas prácticas en comercio online?",o:["EGM","GRP","Confianza online","AIMC Q Panel"],c:2,e:"El <b>Código Ético de Confianza Online</b> es el código deontológico del comercio electrónico y la publicidad digital en España."},
+{id:132,t:"T11",s:"kah",q:"¿Qué norma protege de prácticas comerciales desleales?",o:["Ley audiovisual","Ley de marcas","Ley de patentes","Ley de competencia desleal"],c:3,e:"La <b>Ley 3/1991, de Competencia Desleal</b> protege la competencia y prohíbe los actos de competencia desleal, incluida la publicidad ilícita."},
+{id:133,t:"T12",s:"kah",q:"¿En qué medios se utiliza el CPM?",o:["Offline","Online","Semiline","Megaline"],c:1,e:"El <b>CPM</b> se utiliza en medios online (coste de mil impresiones) y también en offline. La respuesta del Kahoot es <b>Online</b>."},
+{id:134,t:"T12",s:"kah",q:"¿Qué es una impresión en publicidad online?",o:["Un clic en un anuncio","Una conversión","Registro de ver un anuncio","Un lead comercial"],c:2,e:"Una <b>impresión</b> es el registro de un usuario al ver un anuncio. Distinto de un clic (acción activa) y de una conversión (acción dentro del sitio web)."},
+{id:135,t:"T12",s:"kah",q:"¿Qué método descompone el problema en estructura jerárquica?",o:["AHP","Scoring","Evaluación compensatoria","Análisis alternativo"],c:0,e:"El <b>AHP</b> (Proceso de Análisis Jerárquico) descompone un problema en estructura jerárquica con 3 niveles: objetivo, criterios y alternativas."},
+{id:136,t:"T12",s:"kah",q:"¿Qué tipo de test se basa en el recuerdo?",o:["Pretest","Test de concepto","Test de medios","Postest"],c:3,e:"El <b>postest publicitario</b> incluye métodos basados en el recuerdo: recuerdo de la publicidad, de marcas e imagen de marca. El pretest se realiza ANTES de la campaña."},
+{id:137,t:"T13",s:"kah",q:"En coste objetivo, ¿cómo se denomina el margen deseado?",o:["Target cost","Target profit","Coste fijo","Target share"],c:1,e:"El <b>target profit</b> es el margen de beneficio deseado. Fórmula: Coste permitido = Precio de venta esperado - Target profit."},
+{id:138,t:"T13",s:"kah",q:"¿Qué método de coste objetivo parte de la experiencia?",o:["Método integrador","Método funcional","Método de adición","Método de sustracción"],c:2,e:"El <b>método de adición</b> parte de la experiencia y posibilidades de producción. Ignora el mercado y puede generar costes objetivos no competitivos."},
+{id:139,t:"T13",s:"kah",q:"¿Qué métrica indica el coste de mil impresiones?",o:["Coste por clic","Coste por lead","Coste por adquisición","Coste por mil"],c:3,e:"El <b>Coste Por Mil (CPM)</b> indica el coste de mil impresiones de un anuncio. Fórmula: CPM = Coste total / (Impresiones / 1.000)."},
+{id:140,t:"T13",s:"kah",q:"¿Qué indicador mide clics sobre impresiones?",o:["CTR","CPC","CPL","KPI"],c:0,e:"El <b>CTR</b> (Click Through Rate) mide la relevancia de los anuncios. Fórmula: CTR = (Clics / Impresiones) x 100."},
+{id:141,t:"T13",s:"kah",q:"¿Qué retribución cobra una cuota estandarizada del 10-12%?",o:["Honorarios","Por horas","Fee mensual","Porcentaje de medios"],c:0,e:"Los <b>honorarios</b> son una cuota estandarizada del 10-12% que se añaden al total de inversión de la campaña."},
+{id:142,t:"T13",s:"kah",q:"¿Qué sistema paga a la agencia una cantidad fija mensual?",o:["Fee mensual","Por horas","CPC","CPM"],c:0,e:"El <b>fee mensual</b> es una cuota mensual fija por los servicios a prestar, según un programa de acciones, calendario y número de horas determinadas al mes."},
+{id:143,t:"T13",s:"kah",q:"¿Qué retribución depende del tiempo invertido por el equipo?",o:["Porcentaje medios","Honorarios fijos","Por horas trabajadas","Comisión retail"],c:2,e:"La retribución <b>por horas trabajadas</b> paga a la agencia una cantidad por cada hora de trabajo."},
+{id:144,t:"T13",s:"kah",q:"¿Qué documento formaliza la compra de espacios publicitarios?",o:["Briefing creativo","Dossier de prensa","Orden de compra","Claim"],c:2,e:"La <b>orden de compra</b> formaliza la contratación de espacios publicitarios entre la agencia y el medio."},
+{id:145,t:"T13",s:"kah",q:"¿Qué coste suele incluir la agencia al presentar el presupuesto?",o:["Solo impuestos","Solo descuentos","Remuneración de agencia","Solo diseño"],c:2,e:"Al presentar el presupuesto, la agencia incluye la <b>remuneración de agencia</b> (honorarios 10-12%, porcentaje de medios hasta 15%, por horas o fee mensual), más descuentos, IVA (21%) e IRPF (15%)."},
+{id:146,t:"T13",s:"kah",q:"¿Qué dato conviene detallar en el presupuesto de medios?",o:["Gustos personales","Logos de rivales","CV del cliente","Tarifas y recargos"],c:3,e:"En el presupuesto de medios es esencial detallar las <b>tarifas y recargos</b> de cada soporte o medio, así como los descuentos, el IVA (21%) y el IRPF (15%)."},
+{id:147,t:"T13",s:"kah",q:"¿Qué alternativa retribuye por el volumen invertido en medios?",o:["Por horas","Fee mensual","CPL","Porcentaje de medios"],c:3,e:"El <b>porcentaje de medios</b> retribuye a la agencia con un porcentaje de lo que el anunciante gasta en el plan de medios (hasta el 15%)."},
+{id:148,t:"T13",s:"kah",q:"¿Qué permite comparar costes entre soportes de una campaña?",o:["Moodboard","Rentabilidad","Claim","Storyline"],c:1,e:"El análisis de <b>rentabilidad</b> (mediante CPM, C/GRP, CPC, CPL) permite comparar los costes entre diferentes soportes y determinar cuáles ofrecen mejor relación calidad-precio."},
+{id:149,t:"T14",s:"kah",q:"¿Qué herramienta analiza datos televisivos para optimizar TV?",o:["Instar analytics","Info ío","Google analytics","Welovroi"],c:0,e:"<b>Instar Analytics</b> (antes InfoSys) es el software de análisis televisivo del grupo Kantar Media. Resalta el comportamiento de la audiencia para operadores, anunciantes y agencias."},
+{id:150,t:"T14",s:"kah",q:"¿Qué archivo separa columnas por comas y filas por saltos?",o:["PDF","WORD","Excel","CSV"],c:3,e:"Un <b>CSV</b> (comma-separated values) es un archivo de texto con datos distribuidos en columnas separadas por comas y filas por saltos de línea."},
+{id:151,t:"T14",s:"kah",q:"¿Qué técnica evalúa el impacto de marca en medios digitales?",o:["Press clipping","Encuesta a consumidores","Análisis de tendencias","Ventas"],c:0,e:"El <b>press clipping</b> evalúa el impacto de la marca en los medios, incluidos los digitales. Identifica, cuantifica y evalúa ese impacto."},
+{id:152,t:"T14",s:"kah",q:"¿Qué software de ODEC ayuda a ejecutar planes de medios?",o:["TweetDeck","Google alerts","Tom micro","Hootsuite"],c:2,e:"<b>TOM Micro</b> es el software de ODEC que facilita el análisis del espectro mediático y la realización de planes de medios con datos del EGM y AIMC Marcas."},
+{id:153,t:"T14",s:"kah",q:"¿Qué software de InfoAdex analiza inversión publicitaria?",o:["Instar social","Info ío","Geomex","ComScore"],c:1,e:"<b>Info ío</b> (antes Info XXI) es el software de InfoAdex con datos sobre la inversión publicitaria en España."},
+{id:154,t:"T14",s:"kah",q:"¿Qué informe incluye CPM y coste por rating point?",o:["Informe general","Informe de medios","Informe de rentabilidad","Informe social"],c:2,e:"El <b>Informe de rentabilidad de campañas</b> incluye el CPM y el C/GRP (Coste por Rating Point)."},
+{id:155,t:"T14",s:"kah",q:"¿Qué formato de informes es propio de datos exportables?",o:["JPG","HTML","MP3","CSV"],c:3,e:"El <b>CSV</b> es el formato para exportar datos numéricos procesables en Excel. Los informes gráficos van en PDF y los datos numéricos en CSV o XLS."},
+{id:156,t:"T14",s:"kah",q:"¿Qué opción personaliza accesos rápidos en Instar Analytics?",o:["Base de datos","Modo offline","Quick Access Toolbar","Editor de CSV"],c:2,e:"La <b>Quick Access Toolbar</b> permite al usuario de Instar Analytics crear accesos directos personalizados a las herramientas que más utiliza."},
+{id:157,t:"T15",s:"kah",q:"¿Qué es el press clipping?",o:["Un algoritmo de costes","Un método de leads","Una técnica creativa","Resumen de informaciones"],c:3,e:"El <b>press clipping</b> es la herramienta orientada a evaluar las informaciones difundidas sobre una marca y elaborar informes que resuman la cobertura informativa publicada en los medios."},
+{id:158,t:"T15",s:"kah",q:"TweetDeck es una herramienta específica para:",o:["Twitter","Instagram","Youtube","Periódicos"],c:0,e:"<b>TweetDeck</b> y TweetReach son herramientas de monitorización específicas para <b>Twitter</b>. Miden el impacto de las conversaciones y permiten localizar influencers."},
+{id:159,t:"T15",s:"kah",q:"¿Qué herramienta monitoriza varias redes e integra Analytics?",o:["Tweetreach","Google alerts","Hootsuite","Agregador"],c:2,e:"<b>Hootsuite</b> monitoriza cuentas de Facebook, Twitter, Instagram, LinkedIn, etc. Es gratuita, ofrece análisis semanales e integra los resultados de Google Analytics y Facebook Insights."},
+{id:160,t:"T15",s:"kah",q:"¿Qué empresas siguen radio y TV en tiempo real?",o:["Press clipping","Agencias creativas","Broadcast monitors","Retailers"],c:2,e:"Las empresas de <b>broadcast monitors</b> realizan seguimiento exhaustivo de TV y radio en tiempo real."},
+{id:161,t:"T15",s:"kah",q:"¿Qué servicio resume noticias de prensa sobre una marca?",o:["Press clipping","Display","Televenta","MUPI"],c:0,e:"El <b>press clipping</b> resume las noticias de prensa sobre una marca. Es la técnica más utilizada para el seguimiento de la información sobre la marca anunciante en los medios."},
+{id:162,t:"T15",s:"kah",q:"¿Qué herramienta permite alertas por menciones en la web?",o:["Mástiles","Instar planning","Google alerts","Mailing"],c:2,e:"<b>Google Alerts</b> es una opción gratuita que permite realizar seguimiento de lo publicado en webs, blogs, noticias, vídeos y grupos de discusión. Requiere Gmail."},
+{id:163,t:"T15",s:"kah",q:"¿Qué cliente suele contratar seguimiento de medios?",o:["Un soporte PLV","Un tótem","Un lineal","Un anunciante"],c:3,e:"Los principales clientes son los <b>anunciantes</b> a través de sus departamentos de comunicación, marketing y RRPP, periodistas, gabinetes de prensa, empresas e instituciones."},
+{id:164,t:"T15",s:"kah",q:"¿Qué se rastrea en seguimiento de medios online?",o:["Solo carteles PLV","Conversaciones y menciones","Stock de tiendas","Costes fijos"],c:1,e:"En el seguimiento de medios online se rastrean <b>conversaciones y menciones</b> sobre la marca: noticias, referencias en webs, blogs, redes sociales, vídeos y grupos de discusión."},
+];
+const ST = {
+  mode:'simulacro', tema:'todos', src:'todas',
+  pool:[], cur:0, answered:false, session:[],
+  fails:[], hist:{done:0,ok:0}, fi:0,
+};
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+function setMode(m,el){
+  ST.mode=m;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  const showTema=(m==='porTema'||m==='todas');
+  document.getElementById('filters-tema').style.display=showTema?'flex':'none';
+  const labels={
+    simulacro:'Empezar simulacro (40 preguntas) ↗',
+    flashcards:'Empezar flashcards ↗',
+    porTema:'Estudiar tema seleccionado ↗',
+    fallos:ST.fails.length>0?`Repasar ${ST.fails.length} fallos ↗`:'Sin fallos aún',
+    todas:'Responder todas las preguntas ↗'
+  };
+  document.getElementById('start-btn').textContent=labels[m];
+}
+
+function selTema(el,t){document.querySelectorAll('[onclick^="selTema"]').forEach(x=>x.classList.remove('active'));el.classList.add('active');ST.tema=t;}
+function selSrc(el,s){document.querySelectorAll('[onclick^="selSrc"]').forEach(x=>x.classList.remove('active'));el.classList.add('active');ST.src=s;}
+
+function buildPool(){
+  let pool=[...Q];
+  if(ST.tema!=='todos') pool=pool.filter(q=>q.t===ST.tema);
+  if(ST.src!=='todas') pool=pool.filter(q=>q.s===ST.src);
+  return shuffle(pool);
+}
+
+function buildPoolOrdered(){
+  let pool=[...Q];
+  if(ST.tema!=='todos') pool=pool.filter(q=>q.t===ST.tema);
+  if(ST.src!=='todas') pool=pool.filter(q=>q.s===ST.src);
+  return pool;
+}
+
+function startSession(){
+  if(ST.mode==='fallos'&&ST.fails.length===0)return;
+  let pool;
+  if(ST.mode==='simulacro') pool=buildPool().slice(0,40);
+  else if(ST.mode==='flashcards') pool=buildPool();
+  else if(ST.mode==='porTema') pool=buildPool();
+  else if(ST.mode==='todas') pool=buildPoolOrdered();
+  else pool=shuffle(Q.filter(q=>ST.fails.includes(q.id)));
+  ST.pool=pool; ST.cur=0; ST.session=[];
+  if(ST.mode==='flashcards'){ST.fi=0;showScreen('screen-flash');renderFlash();}
+  else{showScreen('screen-quiz');renderQ();}
+}
+
+const srcLabel={'docx':'📝 Examen','kah':'🎮 Kahoot'};
+const srcClass={'docx':'src-docx','kah':'src-kah'};
+
+function renderQ(){
+  const q=ST.pool[ST.cur], n=ST.pool.length;
+  document.getElementById('q-progress').textContent=`${ST.cur+1}/${n}`;
+  document.getElementById('progress-fill').style.width=Math.round(ST.cur/n*100)+'%';
+  document.getElementById('q-meta').innerHTML=`<span class="q-tag tema">${q.t}</span><span class="q-tag ${srcClass[q.s]||'src-docx'}">${srcLabel[q.s]||'📝 Examen'}</span>`;
+  document.getElementById('q-text').textContent=q.q;
+  const L=['A','B','C','D'];
+  document.getElementById('q-options').innerHTML=q.o.map((o,i)=>`<button class="option" onclick="selectAnswer(${i})"><span class="opt-letter">${L[i]}</span>${o}</button>`).join('');
+  document.getElementById('q-explanation').className='explanation';
+  document.getElementById('q-explanation').innerHTML='';
+  document.getElementById('next-btn').className='next-btn';
+  ST.answered=false;
+}
+
+function selectAnswer(idx){
+  if(ST.answered)return; ST.answered=true;
+  const q=ST.pool[ST.cur];
+  const opts=document.querySelectorAll('.option');
+  opts.forEach(o=>o.classList.add('disabled'));
+  const ok=idx===q.c;
+  opts[idx].classList.add(ok?'correct':'wrong');
+  if(!ok)opts[q.c].classList.add('show-correct');
+  const expEl=document.getElementById('q-explanation');
+  expEl.innerHTML=`<strong>${ok?'✓ Correcto':'✗ Incorrecto'}</strong> — ${q.e}`;
+  expEl.className='explanation show'+(ok?'':' wrong-exp');
+  ST.session.push({id:q.id,ok});
+  ST.hist.done++; if(ok){ST.hist.ok++;ST.fails=ST.fails.filter(f=>f!==q.id);}
+  else if(!ST.fails.includes(q.id))ST.fails.push(q.id);
+  updateStats();
+  const nb=document.getElementById('next-btn');
+  nb.className='next-btn show';
+  nb.textContent=ST.cur+1<ST.pool.length?'Siguiente →':'Ver resultados →';
+}
+
+function nextQuestion(){ST.cur++;ST.cur>=ST.pool.length?showResults():renderQ();}
+
+function renderFlash(){
+  const q=ST.pool[ST.fi],n=ST.pool.length;
+  document.getElementById('f-progress').textContent=`${ST.fi+1}/${n}`;
+  document.getElementById('f-fill').style.width=Math.round(ST.fi/n*100)+'%';
+  document.getElementById('f-meta').innerHTML=`<span class="q-tag tema">${q.t}</span><span class="q-tag ${srcClass[q.s]||'src-docx'}">${srcLabel[q.s]||'📝 Examen'}</span>`;
+  document.getElementById('f-question').textContent=q.q;
+  document.getElementById('f-answer').textContent=q.o[q.c];
+  document.getElementById('flashcard').classList.remove('flipped');
+  document.getElementById('card-controls').style.display='none';
+}
+
+function flipCard(){
+  const fc=document.getElementById('flashcard');
+  fc.classList.toggle('flipped');
+  document.getElementById('card-controls').style.display=fc.classList.contains('flipped')?'flex':'none';
+}
+
+function cardResult(knew){
+  const q=ST.pool[ST.fi];
+  if(!knew&&!ST.fails.includes(q.id))ST.fails.push(q.id);
+  if(knew)ST.fails=ST.fails.filter(f=>f!==q.id);
+  ST.fi++;
+  if(ST.fi>=ST.pool.length)goHome();
+  else renderFlash();
+}
+
+function showResults(){
+  const ok=ST.session.filter(s=>s.ok).length, wr=ST.session.length-ok;
+  const pct=Math.round(ok/ST.session.length*100), pass=pct>=50;
+  document.getElementById('score-pct').textContent=pct+'%';
+  document.getElementById('score-label').textContent=pass?'APROBADO':'REPASA';
+  document.getElementById('score-circle').className='score-circle '+(pass?'pass':'fail');
+  document.getElementById('res-title').textContent=pass?'¡Buen resultado!':'Sigue practicando';
+  document.getElementById('res-sub').textContent=`${ST.session.length} preguntas respondidas`;
+  document.getElementById('res-correct').textContent=ok;
+  document.getElementById('res-wrong').textContent=wr;
+  document.getElementById('res-total').textContent=ST.session.length;
+  let html='';
+  const wrongs=ST.session.filter(s=>!s.ok);
+  if(wrongs.length>0){
+    html='<div class="review-title">Preguntas falladas</div>';
+    wrongs.forEach(s=>{const q=Q.find(x=>x.id===s.id);html+=`<div class="review-item">${q.q}<div class="review-correct">✓ ${q.o[q.c]}</div></div>`;});
+  }
+  document.getElementById('review-list').innerHTML=html;
+  showScreen('screen-results');
+}
+
+function repeatFails(){
+  if(ST.fails.length===0){goHome();return;}
+  ST.pool=shuffle(Q.filter(q=>ST.fails.includes(q.id)));
+  ST.cur=0;ST.session=[];
+  showScreen('screen-quiz');renderQ();
+}
+
+const CHEAT=[
+  {t:"T8",h:"Publicidad Exterior y PLV",rows:[
+    ["DOOH Marketing","Digital Out Of Home. Pantallas interactivas en espacios públicos. 90% produce curiosidad (IAB Spain 2019)."],
+    ["Valla","Soporte estático estándar 8×3 m. Papel, vinilo o lona."],
+    ["MUPI","Mueble Urbano para la Presentación de Información. Tiene función propia Y publicidad."],
+    ["OPI","Objeto Publicitario Iluminado. Solo es soporte publicitario, sin otra función."],
+    ["Marquesina","Cubierta de 3 paredes en parada de autobús. También soporte publicitario. NO es MUPI."],
+    ["Monopostes","Grandes vallas con un solo poste. NO son MUPI."],
+    ["Pub. exterior: mensaje","Muy gráfico, breve, pocas palabras. Tiempo de exposición: segundos."],
+    ["PLV","Publicidad en el Punto de Venta. Más ligada a promoción de ventas que a planificación de medios."],
+    ["Stopper","Sobresale perpendicularmente del lineal. Mensajes breves: 'oferta', '2x1'."],
+    ["Tótem","Columna de PLV. Informa sobre un producto aunque no lo exponga."],
+    ["Cabecera de góndola","Extremos del lineal. Mayor demanda promocional del punto de venta."],
+    ["Expositores","Estanterías con productos en entradas, salidas y lugares estratégicos."],
+    ["Demostradores","Personal externo que promociona y anima a probar el producto en el punto de venta."],
+    ["Carteles PLV","Tipos: colgantes (techo), mástiles (suelo), indicadores (sección), stoppers (lineal)."],
+    ["Ventajas pub. exterior","Gran variedad soportes, rapidez producción, segmentación por ubicación."],
+    ["Desventajas pub. exterior","Reducido tiempo exposición, difícil medir impacto, normativa local distinta."],
+    ["Ventajas PLV","Zonas de paso frecuente, fidelización, bajo coste, captación nuevos clientes."],
+    ["Desventajas PLV","Vida limitada (hay que renovar), saturación, más de promoción que de planificación."],
+  ]},
+  {t:"T9",h:"Publicidad Directa, Marketing Directo y Publicity",rows:[
+    ["Pub. directa","Distribución de material publicitario por correo que llega al buzón."],
+    ["Buzoneo","Reparto masivo NO personalizado de folletos. Bajo coste pero poco valorado."],
+    ["Mailing","Buzoneo personalizado por correo postal. Espera respuesta. Requiere consentimiento previo."],
+    ["Elementos mailing","Sobre + carta personalizada + folleto/catálogo + pedido (+ regalo + tarjeta de respuesta)."],
+    ["Desventaja mailing vs buzoneo","Alto coste de mantener bases de datos actualizadas. Estricta regulación de protección de datos."],
+    ["Marketing directo","Sistema interactivo que provoca respuesta medible. Formatos: televenta, cupón prensa, telemarketing, emailing."],
+    ["Televenta","Mkt directo NO impreso. Usa TV como soporte de venta a distancia."],
+    ["Telemarketing","Mkt directo vía teléfono."],
+    ["Cupón en prensa","Mkt directo IMPRESO. Cupón de descuento insertado en periódicos o revistas."],
+    ["Email marketing","Ha sustituido al mailing tradicional. Envío de ofertas y recordatorios por correo electrónico."],
+    ["Publicity","NO paga espacios. Basada en RRPP. Objetivo: imagen de marca, no venta directa."],
+    ["Formas de publicity","Comunicados de prensa, eventos, patrocinio, concursos, responsabilidad social, marketing emocional, influencers."],
+    ["NO es publicity","Mailing (es publicidad directa pagada)."],
+    ["Ventaja publicity","Menor coste, mayor credibilidad al asociarse con noticias de prestigio."],
+    ["Desventaja publicity","No se tiene control total. La información puede no ser favorable. Eficacia difícil de cuantificar."],
+  ]},
+  {t:"T10",h:"Publicidad en Internet y No Convencional",rows:[
+    ["SEO / SEM","Publicidad en buscadores: orgánica (SEO) o de pago (SEM). Llevan la web a la SERP."],
+    ["SERP","Search Engine Results Page. La página de resultados del buscador. NO es una forma de promoción."],
+    ["Display","Banners y pop-ups. Visual y gráfico. Efectivo pero evitable con bloqueadores."],
+    ["Banner","Imagen animada en parte superior, inferior o lateral de una web. Leaderboard (horizontal), Skycrapers (vertical)."],
+    ["Mejor posición banner","Parte superior + lateral derecho. Son más visibles."],
+    ["Pop-up","Ventana emergente con contenido publicitario. Puede bloquearse."],
+    ["Landing page","Página de aterrizaje donde llega el usuario tras clicar en un anuncio."],
+    ["Enlace patrocinado","Aparece en páginas de resultados de buscador (SERP). Relacionado con palabras clave."],
+    ["Remarketing","Anuncios personalizados para usuarios que ya visitaron tu web. Aumenta el ROI."],
+    ["Newsletter","Boletín electrónico enviado periódicamente a suscriptores. Ejemplo de marketing por correo electrónico."],
+    ["Blogs","Las empresas los usan para TODAS: imagen de marca, informar clientes, generar tráfico web y contenido para RRSS."],
+    ["Mkt de guerrilla","Tácticas no convencionales de bajo coste. Sorprender, impresionar, entusiasmo social. Tipos: outdoor, indoor, emboscada."],
+    ["Flashmob","Ejemplo de marketing de guerrilla tipo emboscada."],
+    ["LinkedIn","Red social profesional. Ideal para B2B. Más texto y artículos que multimedia."],
+    ["Instagram","Audiencia millennials y adolescentes. Depende de imágenes y stories 24h."],
+    ["Ventajas internet","Alcance mundial, reducción costes, mayor interactividad, capacidad medir datos, flexibilidad, inmediatez."],
+  ]},
+  {t:"T11",h:"Regulación y Códigos Deontológicos",rows:[
+    ["LGP","Ley 34/1988, General de Publicidad. Normativa principal. Define publicidad ilícita."],
+    ["Pub. ilícita","Atenta contra la dignidad o vulnera derechos constitucionales. Incluye engañosa, desleal y subliminal."],
+    ["Pub. subliminal","Actúa mediante estímulos fronterizos con los umbrales de los sentidos. Sin ser conscientemente percibida."],
+    ["Pub. engañosa","Induce a error en sus indicaciones (características, precio, condiciones...). Afecta a consumidores."],
+    ["Pub. desleal","Provoca descrédito de competidores o induce a confusión. Afecta a la competencia."],
+    ["LSSI","Ley 34/2002. Regula la publicidad en internet y comercio electrónico."],
+    ["RGPD","Reglamento General de Protección de Datos (desde mayo 2018). Complementa la LSSI."],
+    ["Protección IP en TV","Máximo 12 min/hora de publicidad. Horario de protección al menor: 6:00-22:00h. Festivos: 9:00-12:00h."],
+    ["Prod. prohibidos en TV","Estupefacientes, psicotrópicos, medicamentos (sin autorización), cigarrillos y alcohol de más de 20 grados."],
+    ["Ley que prohíbe cigarrillos en TV","Ley General de Comunicación Audiovisual."],
+    ["AUTOCONTROL","Asociación para la Autorregulación de la Comunicación Comercial (desde 1996). Jurado de Publicidad."],
+    ["Confianza Online","Código ético sectorial del e-commerce. Sello de calidad: garantía, seguridad y transparencia."],
+    ["Ley Competencia Desleal","Ley 3/1991. Protege la competencia y prohíbe actos desleales, incluida publicidad ilícita."],
+  ]},
+  {t:"T12",h:"Seguimiento y Control",rows:[
+    ["Eficacia","Grado en que se logran los objetivos publicitarios establecidos."],
+    ["Eficiencia","Obtener el máximo rendimiento con los recursos disponibles."],
+    ["Efectividad","Equilibrio entre eficacia y eficiencia. Objetivos al mejor precio."],
+    ["ROI","((Ingresos - costes totales) / costes totales) x 100."],
+    ["CPM offline","(Coste campaña / Audiencia o Impactos) x 1.000."],
+    ["C/GRP (C/RP)","(Coste campaña / GRPs) x 1.000. Coste de impactar al 1% del público objetivo."],
+    ["CTR","(Clics / Impresiones) x 100. Mide relevancia del anuncio."],
+    ["Tasa conversión","(Conversiones / Visitantes) x 100."],
+    ["Cuadro de mandos","Dashboard integrado en el plan de medios. Estructura: planificación, análisis, estrategias, indicadores."],
+    ["Cursaje de emisión","Documento que refleja las fases de la campaña. Fundamental para desarrollar el plan de medios."],
+    ["Pretest","Estudios ANTES de la difusión. Tipos: test de conceptos, expresiones creativas, alternativas."],
+    ["Postest","Técnicas DURANTE o DESPUÉS de la campaña. Tipos: basados en recuerdo, en ventas, curva de respuestas."],
+    ["Scoring","Ponderación lineal. Se usa con poca información o incertidumbre. Asigna valores a alternativas."],
+    ["AHP","Proceso de Análisis Jerárquico. Descompone el problema: objetivo, criterios y alternativas."],
+    ["Modelo contribución","Identifica y cuantifica el peso de CADA acción en una conversión."],
+    ["Adstock","Modelo de contribución de Broadbent (1979). Recuerdo publicitario acumulado. At = Tt + At-1."],
+    ["Stats","Dividir el % de consumidores que compraron habiendo visto la publicidad entre los que compraron sin verla."],
+  ]},
+  {t:"T13",h:"Análisis de Márgenes y Costes Permitidos",rows:[
+    ["Coste permitido","Target costing = Precio de venta esperado - Target profit (margen deseado)."],
+    ["Target profit","Margen de beneficio deseado por la empresa en su planificación estratégica."],
+    ["Esquema tradicional","Costes determinan Precios. La reducción de costes la dirigen contables."],
+    ["Coste objetivo","Precios determinan Costes. El mercado marca las pautas. Grupos interdisciplinarios administran costes."],
+    ["Método sustracción","Coste objetivo = coste admisible. Depende del precio de mercado y margen previsto."],
+    ["Método adición","Parte de la experiencia. Ignora el mercado. Puede generar costes no competitivos."],
+    ["Método integrador","Combina sustracción y adición. Compara coste alcanzable con coste objetivo."],
+    ["Método funcional innovador","Para nuevos productos. Clasifica por uso y valor. Asigna coste objetivo a cada grupo."],
+    ["CPM online","Coste total / (Impresiones / 1.000). Coste de mil impresiones."],
+    ["CPC","Coste total / Número de clics. Solo hay pago si hay clic."],
+    ["CPL","Coste Por Lead. Requiere acción del usuario (suscripción, compra, formulario)."],
+    ["C/RP","Coste de impactar a un 1% del público objetivo. Solo válido para el target definido."],
+    ["CTR","(Clics / Impresiones) x 100. Mide la relevancia de los anuncios."],
+    ["Honorarios","10-12% del total de inversión de campaña."],
+    ["Porcentaje de medios","Hasta el 15% de lo que el anunciante gasta en el plan de medios."],
+    ["Fee mensual","Cuota mensual FIJA por los servicios a prestar."],
+    ["Por horas trabajadas","Cantidad por cada hora de trabajo real del equipo."],
+    ["IVA publicidad","21%. Se aplica al importe bruto de las facturas."],
+    ["IRPF publicidad","15% (7% primeros años como autónomo). Se resta sobre la base imponible."],
+    ["Descuento agencia","Porcentaje según el importe bruto facturado."],
+    ["Rappel","Descuento por facturación acumulada cuando el volumen de servicios es elevado."],
+  ]},
+  {t:"T14",h:"Herramientas Informáticas",rows:[
+    ["TOM Micro","Software ODEC. Análisis espectro mediático y planes de medios. Usa datos EGM y AIMC Marcas."],
+    ["TOM Micro: utilidades","Rankings de soportes, evaluación planes de medios, tablas y mapas selección soportes, análisis televisivo."],
+    ["Info ío","Software InfoAdex (antes Info XXI). Datos inversión publicitaria en España. Análisis cuantitativo."],
+    ["Mosaico 2","Software InfoAdex para análisis cualitativo (aspectos creativos de campañas)."],
+    ["Instar Analytics","Software Kantar Media (antes InfoSys). Análisis televisivo. +30 países, +9.000 profesionales."],
+    ["Instar Planning","Permite testear campañas para conocer su ROI antes de ejecutarlas."],
+    ["Instar Social","Mide interacción de usuarios en RRSS (Twitter, Facebook, Instagram) con programas de TV."],
+    ["Quick Access Toolbar","Instar Analytics. Crea accesos directos personalizados a las funciones más usadas."],
+    ["CSV","Comma-Separated Values. Columnas separadas por comas, filas por saltos de línea. Para datos numéricos."],
+    ["Formatos informes","PDF (gráficos para dirección) + CSV/XLS (datos numéricos exportables)."],
+    ["Informe rentabilidad","Incluye CPM y C/GRP (Coste por Rating Point)."],
+    ["Informe análisis campaña","Incluye impactos, duplicaciones, GRP, cobertura útil, alcance, frecuencia media (OTS)."],
+    ["Informes internet","Visitantes únicos, páginas vistas, CPC, CPL, coste por adquisición, tasa de rebote."],
+  ]},
+  {t:"T15",h:"Servicio de Seguimiento de Medios",rows:[
+    ["Press clipping","Herramienta que resume la cobertura informativa publicada en medios. Elabora dosieres."],
+    ["NO es press clipping","Elaborar comunicados de prensa (eso es publicity/RRPP)."],
+    ["Ventajas seguimiento","Actuar rápido ante crisis de marca, conocer competencia, usar información como valor estratégico, reducir riesgo de error."],
+    ["Clientes principales","Periodistas, gabinetes de prensa, dtos. comunicación/marketing/RRPP, empresas e instituciones públicas."],
+    ["NO son clientes","Agencias de marketing y publicidad (según el libro)."],
+    ["Broadcast monitors","Empresas que siguen radio y TV en tiempo real. Solo puede conocerse en el momento de su emisión."],
+    ["Social media monitoring","Seguimiento específico de redes sociales con sus propias particularidades."],
+    ["Google Alerts","Monitorización gratuita. Alertas diarias o semanales por palabras clave. Requiere Gmail."],
+    ["Hootsuite","Monitoriza Facebook, Twitter, Instagram, LinkedIn. Gratuita. Integra Google Analytics y Facebook Insights."],
+    ["TweetDeck/TweetReach","Herramientas específicas para Twitter. Miden impacto conversaciones y localizan influencers."],
+    ["Feedly / Inoreader","Agregadores de contenido online. Se consultan desde cualquier dispositivo."],
+    ["Flipboard / Pocket","Aplicaciones descargables. Actualizaciones automáticas de fuentes suscritas."],
+    ["Reputación online","Conjunto de elementos que reflejan el prestigio de una persona, marca o empresa en la red."],
+    ["Ley Propiedad Intelectual","Si el press clipping se usa con fines comerciales, hay que abonar copyright. Sin lucro: no."],
+  ]},
+];
+
+function showCheatsheet(){
+  document.getElementById('cheat-content').innerHTML=CHEAT.map(t=>`
+    <div class="cs-section">
+      <div class="cs-head" onclick="toggleCs(this)">${t.t} — ${t.h} <span>▾</span></div>
+      <div class="cs-body">${t.rows.map(r=>`<div class="cs-row"><span class="cs-key">${r[0]}</span><span class="cs-val">${r[1]}</span></div>`).join('')}</div>
+    </div>`).join('');
+  showScreen('screen-cheat');
+}
+
+function toggleCs(el){const b=el.nextElementSibling;b.classList.toggle('open');el.querySelector('span').textContent=b.classList.contains('open')?'▴':'▾';}
+
+function goHome(){updateStats();showScreen('screen-home');}
+
+function showScreen(id){
+  ['screen-home','screen-quiz','screen-results','screen-flash','screen-cheat'].forEach(s=>{document.getElementById(s).classList.toggle('hidden',s!==id);});
+}
+
+function updateStats(){
+  document.getElementById('stat-done').textContent=ST.hist.done;
+  document.getElementById('stat-correct').textContent=ST.hist.ok;
+  document.getElementById('stat-pct').textContent=ST.hist.done>0?Math.round(ST.hist.ok/ST.hist.done*100)+'%':'—';
+  if(ST.mode==='fallos')document.getElementById('start-btn').textContent=ST.fails.length>0?`Repasar ${ST.fails.length} fallos ↗`:'Sin fallos aún';
+}
+
+</script>
+</html>
